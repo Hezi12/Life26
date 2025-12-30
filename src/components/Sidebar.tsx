@@ -17,59 +17,137 @@ import { cn } from "@/lib/utils";
 import { ParserModal } from "./ParserModal";
 import { Category, Event } from "@/lib/types";
 import { INITIAL_CATEGORIES } from "@/lib/constants";
+import { api } from "@/lib/api";
 
 const Sidebar = () => {
   const pathname = usePathname();
   const [time, setTime] = useState<Date | null>(null);
   const [isParserOpen, setIsParserOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
+  const [todayEvents, setTodayEvents] = useState<Event[]>([]);
+  const [todayText, setTodayText] = useState<string>("");
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const savedCategories = localStorage.getItem('life26-categories');
-    if (savedCategories) {
-      setCategories(JSON.parse(savedCategories));
-    }
-  }, []);
+    
+    const loadData = async () => {
+      try {
+        const categoriesData = await api.getCategories();
+        if (categoriesData && categoriesData.length > 0) {
+          setCategories(categoriesData);
+        }
+        
+        const allEvents = await api.getEvents();
+        const todayEventsData = allEvents.filter(e => e.dateString === dateString);
+        setTodayEvents(todayEventsData);
+        
+        const savedTexts = localStorage.getItem('life26-parser-texts');
+        const texts = savedTexts ? JSON.parse(savedTexts) : {};
+        setTodayText(texts[dateString] || "");
+      } catch (error) {
+        console.error('Failed to load data', error);
+        // Fallback to localStorage
+        const savedCategories = localStorage.getItem('life26-categories');
+        if (savedCategories) {
+          setCategories(JSON.parse(savedCategories));
+        }
+        const savedEvents = localStorage.getItem('life26-events');
+        const allEvents: Event[] = savedEvents ? JSON.parse(savedEvents) : [];
+        setTodayEvents(allEvents.filter(e => e.dateString === dateString));
+        const savedTexts = localStorage.getItem('life26-parser-texts');
+        const texts = savedTexts ? JSON.parse(savedTexts) : {};
+        setTodayText(texts[dateString] || "");
+      }
+    };
+    
+    loadData();
+    
+    // Refresh data periodically
+    const interval = setInterval(loadData, 30000); // Every 30 seconds
+    return () => clearInterval(interval);
+  }, [dateString]);
 
   const today = new Date();
   const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-  const getTodayData = () => {
+  const getTodayData = async () => {
     if (typeof window === 'undefined') return { events: [], text: "" };
     
-    const savedEvents = localStorage.getItem('life26-events');
-    const allEvents: Event[] = savedEvents ? JSON.parse(savedEvents) : [];
-    const todayEvents = allEvents.filter(e => e.dateString === dateString);
-    
-    const savedTexts = localStorage.getItem('life26-parser-texts');
-    const texts = savedTexts ? JSON.parse(savedTexts) : {};
-    const todayText = texts[dateString] || "";
-    
-    return { events: todayEvents, text: todayText };
+    try {
+      const allEvents = await api.getEvents();
+      const todayEventsData = allEvents.filter(e => e.dateString === dateString);
+      
+      const savedTexts = localStorage.getItem('life26-parser-texts');
+      const texts = savedTexts ? JSON.parse(savedTexts) : {};
+      const todayTextData = texts[dateString] || "";
+      
+      setTodayEvents(todayEventsData);
+      setTodayText(todayTextData);
+      
+      return { events: todayEventsData, text: todayTextData };
+    } catch (error) {
+      console.error('Failed to load events', error);
+      // Fallback to localStorage
+      const savedEvents = localStorage.getItem('life26-events');
+      const allEvents: Event[] = savedEvents ? JSON.parse(savedEvents) : [];
+      const todayEventsData = allEvents.filter(e => e.dateString === dateString);
+      
+      const savedTexts = localStorage.getItem('life26-parser-texts');
+      const texts = savedTexts ? JSON.parse(savedTexts) : {};
+      const todayTextData = texts[dateString] || "";
+      
+      setTodayEvents(todayEventsData);
+      setTodayText(todayTextData);
+      
+      return { events: todayEventsData, text: todayTextData };
+    }
   };
 
-  const handleSave = (newEvents: Event[], rawText: string) => {
-    const savedEvents = localStorage.getItem('life26-events');
-    let allEvents: Event[] = savedEvents ? JSON.parse(savedEvents) : [];
-    
-    // Filter out today's events and add new ones
-    allEvents = allEvents.filter(e => e.dateString !== dateString);
-    allEvents = [...allEvents, ...newEvents];
-    
-    localStorage.setItem('life26-events', JSON.stringify(allEvents));
-    
-    const savedTexts = localStorage.getItem('life26-parser-texts');
-    const texts = savedTexts ? JSON.parse(savedTexts) : {};
-    texts[dateString] = rawText;
-    localStorage.setItem('life26-parser-texts', JSON.stringify(texts));
-    
-    setIsParserOpen(false);
-    // Notify other components using global Event to avoid clash with our Event type
-    window.dispatchEvent(new window.Event('storage'));
-    window.dispatchEvent(new CustomEvent('life26-update', { 
-      detail: { type: 'eventsUpdated', source: 'sidebar' } 
-    }));
+  const handleSave = async (newEvents: Event[], rawText: string) => {
+    try {
+      // Get all existing events
+      const allEvents = await api.getEvents();
+      
+      // Filter out today's events and add new ones
+      const filteredEvents = allEvents.filter(e => e.dateString !== dateString);
+      const updatedEvents = [...filteredEvents, ...newEvents];
+      
+      // Save all events to API
+      for (const event of updatedEvents) {
+        await api.saveEvent(event);
+      }
+      
+      // Save parser text to localStorage (still local for now)
+      const savedTexts = localStorage.getItem('life26-parser-texts');
+      const texts = savedTexts ? JSON.parse(savedTexts) : {};
+      texts[dateString] = rawText;
+      localStorage.setItem('life26-parser-texts', JSON.stringify(texts));
+      
+      setIsParserOpen(false);
+      
+      // Notify other components
+      window.dispatchEvent(new CustomEvent('life26-update', { 
+        detail: { type: 'eventsUpdated', source: 'sidebar' } 
+      }));
+    } catch (error) {
+      console.error('Failed to save events', error);
+      // Fallback to localStorage
+      const savedEvents = localStorage.getItem('life26-events');
+      let allEvents: Event[] = savedEvents ? JSON.parse(savedEvents) : [];
+      allEvents = allEvents.filter(e => e.dateString !== dateString);
+      allEvents = [...allEvents, ...newEvents];
+      localStorage.setItem('life26-events', JSON.stringify(allEvents));
+      
+      const savedTexts = localStorage.getItem('life26-parser-texts');
+      const texts = savedTexts ? JSON.parse(savedTexts) : {};
+      texts[dateString] = rawText;
+      localStorage.setItem('life26-parser-texts', JSON.stringify(texts));
+      
+      setIsParserOpen(false);
+      window.dispatchEvent(new CustomEvent('life26-update', { 
+        detail: { type: 'eventsUpdated', source: 'sidebar' } 
+      }));
+    }
   };
 
   useEffect(() => {
@@ -151,7 +229,10 @@ const Sidebar = () => {
 
       <div className="mt-auto pb-4 flex flex-col items-center gap-6">
         <button
-          onClick={() => setIsParserOpen(true)}
+          onClick={async () => {
+            await getTodayData();
+            setIsParserOpen(true);
+          }}
           className="w-8 h-8 flex items-center justify-center text-zinc-700 hover:text-orange-500 transition-all duration-300 group"
         >
           <Plus size={18} className="group-hover:drop-shadow-[0_0_8px_currentColor]" strokeWidth={1.5} />
@@ -162,8 +243,8 @@ const Sidebar = () => {
         <ParserModal
           dateString={dateString}
           categories={categories}
-          existingEvents={getTodayData().events}
-          initialText={getTodayData().text}
+          existingEvents={todayEvents}
+          initialText={todayText}
           onClose={() => setIsParserOpen(false)}
           onSave={handleSave}
         />

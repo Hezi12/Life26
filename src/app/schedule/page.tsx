@@ -42,6 +42,7 @@ import { cn } from "@/lib/utils";
 import { Category, Event } from "@/lib/types";
 import { ICON_MAP, NEON_COLORS, INITIAL_CATEGORIES, AVAILABLE_ICONS } from "@/lib/constants";
 import { ParserModal } from "@/components/ParserModal";
+import { api } from "@/lib/api";
 
 const INITIAL_EVENTS: Event[] = [];
 
@@ -228,26 +229,25 @@ export default function SchedulePage() {
   const [isParserOpen, setIsParserOpen] = useState(false);
   const timelineScrollRef = useRef<HTMLDivElement>(null);
 
-  // Load from localStorage after mount (client-side only)
+  // Load from API after mount (client-side only)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    try {
-      const savedEvents = localStorage.getItem('life26-events');
-      if (savedEvents) {
-        const parsed = JSON.parse(savedEvents);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setEvents(parsed);
+    const loadData = async () => {
+      try {
+        const [eventsData, categoriesData] = await Promise.all([
+          api.getEvents(),
+          api.getCategories(),
+        ]);
+        
+        if (eventsData && Array.isArray(eventsData) && eventsData.length > 0) {
+          setEvents(eventsData);
         }
-      }
-      
-      const savedCategories = localStorage.getItem('life26-categories');
-      if (savedCategories) {
-        const parsed = JSON.parse(savedCategories);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        
+        if (categoriesData && Array.isArray(categoriesData) && categoriesData.length > 0) {
           const mergedCategories: Category[] = [];
           INITIAL_CATEGORIES.forEach(defaultCat => {
-            const existing = parsed.find((c: Category) => c.id === defaultCat.id);
+            const existing = categoriesData.find((c: Category) => c.id === defaultCat.id);
             if (existing) {
               mergedCategories.push({
                 ...existing,
@@ -258,59 +258,85 @@ export default function SchedulePage() {
               mergedCategories.push(defaultCat);
             }
           });
-          parsed.forEach((cat: Category) => {
+          categoriesData.forEach((cat: Category) => {
             if (!INITIAL_CATEGORIES.some(dc => dc.id === cat.id)) {
               mergedCategories.push(cat);
             }
           });
           setCategories(mergedCategories);
+        } else {
+          setCategories(INITIAL_CATEGORIES);
         }
-      }
-      
-      const savedTexts = localStorage.getItem('life26-parser-texts');
-      if (savedTexts) {
-        const parsed = JSON.parse(savedTexts);
-        if (parsed && typeof parsed === 'object') {
-          setDailyParserTexts(parsed);
-        }
-      }
-      
-      const savedPhotos = localStorage.getItem('life26-photos');
-      if (savedPhotos) {
-        try {
-          const parsed = JSON.parse(savedPhotos);
-          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-            setDailyPhotos(parsed);
+        
+        // Load parser texts and photos from localStorage (these are still local for now)
+        const savedTexts = localStorage.getItem('life26-parser-texts');
+        if (savedTexts) {
+          const parsed = JSON.parse(savedTexts);
+          if (parsed && typeof parsed === 'object') {
+            setDailyParserTexts(parsed);
           }
-        } catch (error) {
-          console.error('Error parsing saved photos:', error);
         }
+        
+        const savedPhotos = localStorage.getItem('life26-photos');
+        if (savedPhotos) {
+          try {
+            const parsed = JSON.parse(savedPhotos);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+              setDailyPhotos(parsed);
+            }
+          } catch (error) {
+            console.error('Error parsing saved photos:', error);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading from API:', error);
+        // Fallback to localStorage if API fails
+        try {
+          const savedEvents = localStorage.getItem('life26-events');
+          if (savedEvents) {
+            const parsed = JSON.parse(savedEvents);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setEvents(parsed);
+            }
+          }
+          const savedCategories = localStorage.getItem('life26-categories');
+          if (savedCategories) {
+            const parsed = JSON.parse(savedCategories);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setCategories(parsed);
+            }
+          }
+        } catch (fallbackError) {
+          console.error('Fallback failed', fallbackError);
+        }
+      } finally {
+        setIsLoaded(true);
       }
-    } catch (error) {
-      console.error('Error loading from localStorage:', error);
-    } finally {
-      setIsLoaded(true);
-    }
+    };
+
+    loadData();
   }, []);
 
   // Synchronize events when they change elsewhere
   useEffect(() => {
-    const handleSync = () => {
-      const savedEvents = localStorage.getItem('life26-events');
-      if (savedEvents) {
-        setEvents(JSON.parse(savedEvents));
-      }
-      const savedTexts = localStorage.getItem('life26-parser-texts');
-      if (savedTexts) {
-        setDailyParserTexts(JSON.parse(savedTexts));
+    const handleSync = async () => {
+      try {
+        const eventsData = await api.getEvents();
+        if (eventsData && Array.isArray(eventsData)) {
+          setEvents(eventsData);
+        }
+        const savedTexts = localStorage.getItem('life26-parser-texts');
+        if (savedTexts) {
+          setDailyParserTexts(JSON.parse(savedTexts));
+        }
+      } catch (error) {
+        console.error('Sync failed', error);
       }
     };
 
-    window.addEventListener('storage', handleSync);
     window.addEventListener('life26-update' as any, handleSync);
     
     return () => {
-      window.removeEventListener('storage', handleSync);
       window.removeEventListener('life26-update' as any, handleSync);
     };
   }, []);
@@ -373,12 +399,44 @@ export default function SchedulePage() {
 
   useEffect(() => {
     if (!isLoaded || typeof window === 'undefined') return;
-    localStorage.setItem('life26-events', JSON.stringify(events));
+    
+    // Save events to API
+    const saveEvents = async () => {
+      try {
+        for (const event of events) {
+          await api.saveEvent(event);
+        }
+        // Notify other pages
+        window.dispatchEvent(new CustomEvent('life26-update', { 
+          detail: { type: 'events-updated', source: 'schedule-page' } 
+        }));
+      } catch (error) {
+        console.error('Failed to save events to API', error);
+        // Fallback to localStorage
+        localStorage.setItem('life26-events', JSON.stringify(events));
+      }
+    };
+    
+    saveEvents();
   }, [events, isLoaded]);
 
   useEffect(() => {
     if (!isLoaded || typeof window === 'undefined') return;
-    localStorage.setItem('life26-categories', JSON.stringify(categories));
+    
+    // Save categories to API
+    const saveCategories = async () => {
+      try {
+        for (const category of categories) {
+          await api.saveCategory(category);
+        }
+      } catch (error) {
+        console.error('Failed to save categories to API', error);
+        // Fallback to localStorage
+        localStorage.setItem('life26-categories', JSON.stringify(categories));
+      }
+    };
+    
+    saveCategories();
   }, [categories, isLoaded]);
 
   useEffect(() => {
