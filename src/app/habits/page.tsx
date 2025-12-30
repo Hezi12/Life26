@@ -174,31 +174,31 @@ export default function HabitsPage() {
 
   return (
     <div className="h-screen bg-black text-white font-mono flex flex-col overflow-hidden" dir="rtl">
-      {/* Header HUD */}
-      <header className="p-6 border-b border-zinc-900 flex justify-between items-center shrink-0 bg-black z-20">
+      {/* Header HUD - Mobile responsive */}
+      <header className="p-4 sm:p-6 border-b border-zinc-900 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 shrink-0 bg-black z-20">
         <div>
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex items-center gap-2 sm:gap-3 mb-1">
             <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse shadow-[0_0_10px_#f97316]" />
-            <h1 className="text-xl font-black italic tracking-tighter uppercase">HABIT_PROTOCOL</h1>
+            <h1 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase">HABIT_PROTOCOL</h1>
           </div>
-          <p className="text-zinc-500 text-[10px] uppercase tracking-[0.3em]">Neural Rewiring / Systematic Discipline</p>
+          <p className="text-zinc-500 text-[9px] sm:text-[10px] uppercase tracking-[0.3em]">Neural Rewiring / Systematic Discipline</p>
         </div>
 
-        <div className="flex items-center gap-8">
-          <div className="flex items-center gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 w-full sm:w-auto">
+          <div className="flex items-center gap-2 sm:gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-sm w-full sm:w-auto">
             <button onClick={() => setCurrentTime(new Date(currentTime.setDate(currentTime.getDate() - 1)))} className="p-1 text-zinc-500 hover:text-white transition-colors">
-              <ChevronRight size={16} />
+              <ChevronRight size={14} className="sm:w-4 sm:h-4" />
             </button>
-            <button onClick={() => setCurrentTime(new Date())} className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 hover:bg-white/10 transition-colors">
+            <button onClick={() => setCurrentTime(new Date())} className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 hover:bg-white/10 transition-colors">
               היום
             </button>
             <div className="w-px h-4 bg-zinc-800 mx-1" />
-            <div className="text-xs font-bold text-orange-500 px-2 min-w-[140px] text-center">
+            <div className="text-[10px] sm:text-xs font-bold text-orange-500 px-2 min-w-[120px] sm:min-w-[140px] text-center">
               {new Intl.DateTimeFormat('he-IL', { weekday: 'long', day: 'numeric', month: 'short' }).format(currentTime)}
             </div>
             <div className="w-px h-4 bg-zinc-800 mx-1" />
             <button onClick={() => setCurrentTime(new Date(currentTime.setDate(currentTime.getDate() + 1)))} className="p-1 text-zinc-500 hover:text-white transition-colors">
-              <ChevronLeft size={16} />
+              <ChevronLeft size={14} className="sm:w-4 sm:h-4" />
             </button>
             <div className="w-px h-4 bg-zinc-800 mx-1" />
             <button
@@ -206,34 +206,35 @@ export default function HabitsPage() {
               className="p-1 text-zinc-700 hover:text-red-500 transition-colors"
               title="Reset Day"
             >
-              <RotateCcw size={14} />
+              <RotateCcw size={12} className="sm:w-3.5 sm:h-3.5" />
             </button>
           </div>
 
-          <div className="h-8 w-px bg-zinc-900" />
+          <div className="hidden sm:block h-8 w-px bg-zinc-900" />
 
           <div className="flex flex-col">
-            <span className="text-[10px] text-zinc-600 font-black uppercase tracking-widest leading-none mb-1">Deployment_Sync</span>
-            <span className="text-xl font-black text-[#00d4ff] italic leading-none drop-shadow-[0_0_8px_rgba(0,212,255,0.3)]">{stats.percent}%</span>
+            <span className="text-[9px] sm:text-[10px] text-zinc-600 font-black uppercase tracking-widest leading-none mb-1">Deployment_Sync</span>
+            <span className="text-lg sm:text-xl font-black text-[#00d4ff] italic leading-none drop-shadow-[0_0_8px_rgba(0,212,255,0.3)]">{stats.percent}%</span>
           </div>
         </div>
       </header>
 
-      {/* Progression Matrix - Continuity Section */}
-      <section className="shrink-0 p-8 pb-4 border-b border-zinc-900/50 bg-[#020202] relative overflow-hidden">
+      {/* Progression Matrix - Continuity Section - Mobile responsive */}
+      <section className="shrink-0 p-4 sm:p-6 md:p-8 pb-4 border-b border-zinc-900/50 bg-[#020202] relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
              style={{ backgroundImage: 'radial-gradient(circle at center, #00d4ff 0.5px, transparent 1px)', backgroundSize: '32px 32px' }} />
         
         <div className="max-w-6xl mx-auto relative z-10">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="w-1 h-3 bg-[#00d4ff] shadow-[0_0_8px_#00d4ff]" />
-              <span className="text-[10px] text-zinc-500 uppercase font-black tracking-[0.4em]">Continuity_Matrix</span>
+              <span className="text-[9px] sm:text-[10px] text-zinc-500 uppercase font-black tracking-[0.4em]">Continuity_Matrix</span>
             </div>
-            <span className="text-[9px] text-[#00d4ff]/50 font-mono italic uppercase tracking-widest text-left">Systematic_Persistence_Window</span>
+            <span className="text-[8px] sm:text-[9px] text-[#00d4ff]/50 font-mono italic uppercase tracking-widest text-left">Systematic_Persistence_Window</span>
           </div>
           
-          <div className="grid grid-cols-11 gap-3">
+          {/* Grid - Mobile: scrollable, Desktop: fixed */}
+          <div className="grid grid-cols-11 gap-2 sm:gap-3 overflow-x-auto sm:overflow-x-visible">
             {Array.from({ length: 11 }).map((_, i) => {
               const d = new Date(currentTime);
               d.setDate(d.getDate() + (i - 5)); 
@@ -256,24 +257,24 @@ export default function HabitsPage() {
                 <div 
                   key={i}
                   className={cn(
-                    "h-20 border rounded-sm flex flex-col items-center justify-center transition-all relative group/cell overflow-hidden",
+                    "h-16 sm:h-20 border rounded-sm flex flex-col items-center justify-center transition-all relative group/cell overflow-hidden",
                     dayPercent > 0 ? "bg-orange-500/[0.03] border-orange-500/20" : "bg-black border-zinc-900",
                     isSelected && "border-orange-500 shadow-[0_0_30px_rgba(249,115,22,0.1)] bg-orange-500/[0.05]",
                     isFuture && "opacity-20 border-dashed border-zinc-800"
                   )}
                 >
                   <div className={cn(
-                    "text-[9px] font-black mb-2 tabular-nums",
+                    "text-[8px] sm:text-[9px] font-black mb-1 sm:mb-2 tabular-nums",
                     isSelected ? "text-orange-500" : (isToday ? "text-[#00d4ff]" : "text-zinc-700")
                   )}>
                     {d.getDate()}.{d.getMonth() + 1}
                   </div>
 
-                  <div className="relative h-6 w-6 flex items-center justify-center">
+                  <div className="relative h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center">
                     {dayPercent >= 1 ? (
-                      <Check size={16} className="text-orange-500 drop-shadow-[0_0_8px_#f97316]" />
+                      <Check size={14} className="sm:w-4 sm:h-4 text-orange-500 drop-shadow-[0_0_8px_#f97316]" />
                     ) : dayPercent > 0 ? (
-                      <div className="text-[10px] font-black text-orange-500/60 tabular-nums">{Math.round(dayPercent * 100)}%</div>
+                      <div className="text-[9px] sm:text-[10px] font-black text-orange-500/60 tabular-nums">{Math.round(dayPercent * 100)}%</div>
                     ) : (
                       <div className={cn("w-1.5 h-1.5 rounded-full", isToday ? "bg-[#00d4ff] shadow-[0_0_8px_#00d4ff]" : "bg-zinc-900")} />
                     )}

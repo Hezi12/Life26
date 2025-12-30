@@ -123,33 +123,33 @@ const MissionPage = () => {
 
   return (
     <div className="h-screen bg-black text-white font-mono flex flex-col overflow-hidden" dir="rtl">
-      {/* Header HUD */}
-      <header className="p-6 border-b border-zinc-900 flex justify-between items-center shrink-0 bg-black z-20">
+      {/* Header HUD - Mobile responsive */}
+      <header className="p-4 sm:p-6 border-b border-zinc-900 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 shrink-0 bg-black z-20">
         <div>
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex items-center gap-2 sm:gap-3 mb-1">
             <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse shadow-[0_0_10px_#f97316]" />
-            <h1 className="text-xl font-black italic tracking-tighter uppercase">MISSION_PROTOCOL</h1>
+            <h1 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase">MISSION_PROTOCOL</h1>
           </div>
-          <p className="text-zinc-500 text-[10px] uppercase tracking-[0.3em]">Single Objective Core / Chain of Command</p>
+          <p className="text-zinc-500 text-[9px] sm:text-[10px] uppercase tracking-[0.3em]">Single Objective Core / Chain of Command</p>
         </div>
 
-        <div className="flex items-center gap-8">
-          {/* Navigation Controls */}
-          <div className="flex items-center gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 w-full sm:w-auto">
+          {/* Navigation Controls - Mobile optimized */}
+          <div className="flex items-center gap-2 sm:gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-sm w-full sm:w-auto">
             <button
               onClick={() => setCurrentDate(new Date(currentDate.setDate(currentDate.getDate() - 1)))}
               className="p-1 text-zinc-500 hover:text-white transition-colors"
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={14} className="sm:w-4 sm:h-4" />
             </button>
             <button
               onClick={() => setCurrentDate(new Date())}
-              className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 hover:bg-white/10 transition-colors"
+              className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 hover:bg-white/10 transition-colors"
             >
               היום
             </button>
             <div className="w-px h-4 bg-zinc-800 mx-1" />
-            <div className="text-xs font-bold text-orange-500 px-2 min-w-[140px] text-center">
+            <div className="text-[10px] sm:text-xs font-bold text-orange-500 px-2 min-w-[120px] sm:min-w-[140px] text-center">
               {new Intl.DateTimeFormat('he-IL', { weekday: 'long', day: 'numeric', month: 'short' }).format(currentDate)}
             </div>
             <div className="w-px h-4 bg-zinc-800 mx-1" />
@@ -157,7 +157,7 @@ const MissionPage = () => {
               onClick={() => setCurrentDate(new Date(currentDate.setDate(currentDate.getDate() + 1)))}
               className="p-1 text-zinc-500 hover:text-white transition-colors"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={14} className="sm:w-4 sm:h-4" />
             </button>
             <div className="w-px h-4 bg-zinc-800 mx-1" />
             <button
@@ -165,35 +165,36 @@ const MissionPage = () => {
               className="p-1 text-zinc-700 hover:text-red-500 transition-colors"
               title="Reset Day"
             >
-              <RotateCcw size={14} />
+              <RotateCcw size={12} className="sm:w-3.5 sm:h-3.5" />
             </button>
           </div>
 
-          <div className="h-8 w-px bg-zinc-900" />
+          <div className="hidden sm:block h-8 w-px bg-zinc-900" />
 
           <div className="flex flex-col">
-            <span className="text-[10px] text-zinc-600 font-black uppercase tracking-widest leading-none mb-1">Active_Streak</span>
-            <span className="text-xl font-black text-[#00d4ff] italic leading-none drop-shadow-[0_0_8px_rgba(0,212,255,0.3)]">{chainStats.streak}D</span>
+            <span className="text-[9px] sm:text-[10px] text-zinc-600 font-black uppercase tracking-widest leading-none mb-1">Active_Streak</span>
+            <span className="text-lg sm:text-xl font-black text-[#00d4ff] italic leading-none drop-shadow-[0_0_8px_rgba(0,212,255,0.3)]">{chainStats.streak}D</span>
           </div>
         </div>
       </header>
 
-      {/* Progression Matrix - Top Dominant Section */}
-      <section className="shrink-0 p-8 pb-4 border-b border-zinc-900/50 bg-[#020202] relative overflow-hidden">
+      {/* Progression Matrix - Top Dominant Section - Mobile responsive */}
+      <section className="shrink-0 p-4 sm:p-6 md:p-8 pb-4 border-b border-zinc-900/50 bg-[#020202] relative overflow-hidden">
         {/* Decorative background grid with dual color nodes */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
              style={{ backgroundImage: 'radial-gradient(circle at center, #00d4ff 0.5px, transparent 1px)', backgroundSize: '32px 32px' }} />
         
         <div className="max-w-6xl mx-auto relative z-10">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="w-1 h-3 bg-[#00d4ff] shadow-[0_0_8px_#00d4ff]" />
-              <span className="text-[10px] text-zinc-500 uppercase font-black tracking-[0.4em]">Progression_Matrix</span>
+              <span className="text-[9px] sm:text-[10px] text-zinc-500 uppercase font-black tracking-[0.4em]">Progression_Matrix</span>
             </div>
-            <span className="text-[9px] text-[#00d4ff]/50 font-mono italic uppercase tracking-widest">11_Day_Continuity_Window</span>
+            <span className="text-[8px] sm:text-[9px] text-[#00d4ff]/50 font-mono italic uppercase tracking-widest">11_Day_Continuity_Window</span>
           </div>
           
-          <div className="grid grid-cols-11 gap-3">
+          {/* Grid - Mobile: scrollable */}
+          <div className="grid grid-cols-11 gap-2 sm:gap-3 overflow-x-auto sm:overflow-x-visible">
             {Array.from({ length: 11 }).map((_, i) => {
               const d = new Date(currentDate);
               d.setDate(d.getDate() + (i - 5)); 
@@ -207,7 +208,7 @@ const MissionPage = () => {
                 <div 
                   key={i}
                   className={cn(
-                    "h-24 border rounded-sm flex flex-col items-center justify-center transition-all relative group/cell overflow-hidden",
+                    "h-20 sm:h-24 border rounded-sm flex flex-col items-center justify-center transition-all relative group/cell overflow-hidden",
                     m?.mission ? "bg-orange-500/[0.03] border-orange-500/20" : "bg-black border-zinc-900",
                     isSelected && "border-orange-500 shadow-[0_0_30px_rgba(249,115,22,0.1)] bg-orange-500/[0.05]",
                     isFuture && "opacity-20 border-dashed border-zinc-800"
@@ -217,13 +218,13 @@ const MissionPage = () => {
                   {isSelected && <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-orange-500" />}
                   
                   <div className={cn(
-                    "text-[10px] font-black mb-4 tabular-nums",
+                    "text-[9px] sm:text-[10px] font-black mb-3 sm:mb-4 tabular-nums",
                     isSelected ? "text-orange-500" : (isToday ? "text-[#00d4ff]" : "text-zinc-700")
                   )}>
                     {d.getDate()}.{d.getMonth() + 1}
                   </div>
 
-                  <div className="relative flex items-center justify-center h-8 w-8">
+                  <div className="relative flex items-center justify-center h-6 w-6 sm:h-8 sm:w-8">
                     {(() => {
                       const hasMission = !!m?.mission;
                       const hasScore = m?.score !== undefined && m?.score !== null;
@@ -283,10 +284,10 @@ const MissionPage = () => {
         </div>
       </section>
 
-      <main className="flex-1 grid grid-cols-12 gap-0 overflow-hidden">
+      <main className="flex-1 flex flex-col md:grid md:grid-cols-12 gap-0 overflow-hidden">
         
-        {/* Left Column: Yesterday's Debrief */}
-        <div className="col-span-5 border-l border-zinc-900 p-8 flex flex-col gap-6 overflow-hidden bg-[#030303]">
+        {/* Left Column: Yesterday's Debrief - Mobile: full width */}
+        <div className="flex-1 md:col-span-5 border-l border-zinc-900 p-4 sm:p-6 md:p-8 flex flex-col gap-4 sm:gap-6 overflow-hidden bg-[#030303]">
           <SectionHeader icon={<History size={14} />} title="Yesterday_Debrief" color="text-[#00d4ff]" />
           
           {yesterdayMission ? (
@@ -340,40 +341,40 @@ const MissionPage = () => {
           )}
         </div>
 
-        {/* Right Column: Today's Deployment */}
-        <div className="col-span-7 p-8 flex flex-col gap-8 overflow-hidden">
+        {/* Right Column: Today's Deployment - Mobile: full width */}
+        <div className="flex-1 md:col-span-7 p-4 sm:p-6 md:p-8 flex flex-col gap-6 sm:gap-8 overflow-hidden">
           <SectionHeader icon={<Zap size={14} />} title="Today_Deployment" color="text-orange-500" />
           
           <div className="flex-1 flex flex-col min-h-0 relative group animate-in fade-in slide-in-from-left-4 duration-700">
             <div className="absolute -right-2 top-0 bottom-0 w-[2px] bg-orange-500 group-focus-within:h-full h-12 transition-all duration-500" />
-            <div className="flex-1 flex flex-col bg-zinc-900/10 border border-orange-500/10 focus-within:border-orange-500/20 p-8 transition-all relative overflow-hidden">
+            <div className="flex-1 flex flex-col bg-zinc-900/10 border border-orange-500/10 focus-within:border-orange-500/20 p-4 sm:p-6 md:p-8 transition-all relative overflow-hidden">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.02)_0%,transparent_70%)] pointer-events-none" />
               
-              <div className="text-[10px] text-orange-500/50 mb-6 uppercase font-black tracking-[0.3em] relative z-10">Core_Objective_Input</div>
+              <div className="text-[9px] sm:text-[10px] text-orange-500/50 mb-4 sm:mb-6 uppercase font-black tracking-[0.3em] relative z-10">Core_Objective_Input</div>
               <textarea
                 value={currentMission.mission}
                 onChange={(e) => saveMission(dateString, { mission: e.target.value })}
                 placeholder="DEFINE THE ONE THING THAT MATTERS TODAY..."
-                className="flex-1 w-full bg-transparent text-3xl font-black italic text-white placeholder:text-zinc-900 outline-none resize-none leading-tight relative z-10 scrollbar-hide"
+                className="flex-1 w-full bg-transparent text-xl sm:text-2xl md:text-3xl font-black italic text-white placeholder:text-zinc-900 outline-none resize-none leading-tight relative z-10 scrollbar-hide"
               />
               
-              <div className="mt-8 flex justify-between items-end pt-6 border-t border-zinc-900/50 relative z-10 shrink-0">
-                <div className="flex items-center gap-6">
+              <div className="mt-4 sm:mt-6 md:mt-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0 pt-4 sm:pt-6 border-t border-zinc-900/50 relative z-10 shrink-0">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
                   <div className="flex flex-col">
-                    <span className="text-[8px] text-zinc-600 uppercase font-black mb-1">Protocol</span>
-                    <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-tighter">No_Operational_Overload</span>
+                    <span className="text-[7px] sm:text-[8px] text-zinc-600 uppercase font-black mb-1">Protocol</span>
+                    <span className="text-[9px] sm:text-[10px] text-zinc-400 font-bold uppercase tracking-tighter">No_Operational_Overload</span>
                   </div>
                   <div className="w-px h-6 bg-zinc-900" />
                   <div className="flex flex-col">
-                    <span className="text-[8px] text-zinc-600 uppercase font-black mb-1">Constraint</span>
-                    <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-tighter">Single_Focus_Only</span>
+                    <span className="text-[7px] sm:text-[8px] text-zinc-600 uppercase font-black mb-1">Constraint</span>
+                    <span className="text-[9px] sm:text-[10px] text-zinc-400 font-bold uppercase tracking-tighter">Single_Focus_Only</span>
                   </div>
                 </div>
                 
                 {currentMission.mission && (
-                  <div className="flex items-center gap-2 text-orange-500 animate-pulse bg-orange-500/5 px-3 py-1.5 rounded-sm border border-orange-500/10">
-                    <Target size={14} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Target_Locked</span>
+                  <div className="flex items-center gap-2 text-orange-500 animate-pulse bg-orange-500/5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-sm border border-orange-500/10">
+                    <Target size={12} className="sm:w-3.5 sm:h-3.5" />
+                    <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest">Target_Locked</span>
                   </div>
                 )}
               </div>

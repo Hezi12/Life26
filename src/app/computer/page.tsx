@@ -711,8 +711,8 @@ export default function ComputerPage() {
   return (
     <div className="h-screen overflow-hidden flex flex-col bg-black text-white font-mono" dir="rtl">
       {/* Top Header - Aligned with Schedule Page */}
-      <header className="flex items-center justify-between p-6 border-b border-zinc-900 bg-black/50 backdrop-blur-md shrink-0">
-        <div className="flex items-center gap-6">
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-4 sm:p-6 border-b border-zinc-900 bg-black/50 backdrop-blur-md shrink-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
           <h1 className="text-xl font-black italic tracking-[0.2em] text-white">CORE TERMINAL</h1>
           
           {/* Date Navigation */}
@@ -752,39 +752,40 @@ export default function ComputerPage() {
       </header>
 
       {/* Main Grid - Fixed Height */}
-      <div className="flex-1 grid grid-cols-12 gap-0 overflow-hidden">
+      {/* Main Grid - Mobile: column, Desktop: grid */}
+      <div className="flex-1 flex flex-col md:grid md:grid-cols-12 gap-0 overflow-hidden">
         
-        {/* Left Column: Analysis & Sessions (Cols 1-5) */}
-        <div className="col-span-5 border-l border-zinc-900 flex flex-col overflow-hidden bg-[#050505]">
+        {/* Left Column: Analysis & Sessions (Cols 1-5) - Mobile: full width */}
+        <div className="flex-1 md:col-span-5 border-l border-zinc-900 flex flex-col overflow-hidden bg-[#050505]">
           
           {/* Daily Summary Section */}
-            <div className="p-6 border-b border-zinc-900 bg-zinc-950/20">
-              <div className="flex items-center justify-between mb-6">
+            <div className="p-4 sm:p-6 border-b border-zinc-900 bg-zinc-950/20">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <div className="flex items-center gap-2">
                   <div className="w-1 h-4 bg-orange-500 shadow-[0_0_8px_#f97316]" />
-                  <h2 className="text-[10px] uppercase tracking-[0.3em] text-zinc-400 font-black">Daily_Analytics</h2>
+                  <h2 className="text-[9px] sm:text-[10px] uppercase tracking-[0.3em] text-zinc-400 font-black">Daily_Analytics</h2>
                 </div>
-                <div className="text-[8px] text-zinc-700 font-mono">STATUS // OPTIMAL</div>
+                <div className="text-[7px] sm:text-[8px] text-zinc-700 font-mono">STATUS // OPTIMAL</div>
               </div>
               
-              <div className="grid grid-cols-2 gap-8 items-center">
-                <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 items-center">
+                <div className="space-y-3 sm:space-y-4">
                   <div className="flex flex-col">
-                    <span className="text-[8px] text-zinc-600 uppercase tracking-widest mb-1 font-black">TOTAL_WORK_LOAD</span>
-                    <span className="text-xl font-black text-white tabular-nums">{formatDuration(statistics.totalWorkMinutes)}</span>
+                    <span className="text-[7px] sm:text-[8px] text-zinc-600 uppercase tracking-widest mb-1 font-black">TOTAL_WORK_LOAD</span>
+                    <span className="text-lg sm:text-xl font-black text-white tabular-nums">{formatDuration(statistics.totalWorkMinutes)}</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[8px] text-zinc-600 uppercase tracking-widest mb-1 font-black">TOPIC_SYNC_RATE</span>
+                    <span className="text-[7px] sm:text-[8px] text-zinc-600 uppercase tracking-widest mb-1 font-black">TOPIC_SYNC_RATE</span>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-xl font-black text-orange-500 tabular-nums">{statistics.coveragePercent}%</span>
-                      <span className="text-[9px] text-zinc-600 font-mono">({formatDuration(statistics.totalTopicsMinutes)})</span>
+                      <span className="text-lg sm:text-xl font-black text-orange-500 tabular-nums">{statistics.coveragePercent}%</span>
+                      <span className="text-[8px] sm:text-[9px] text-zinc-600 font-mono">({formatDuration(statistics.totalTopicsMinutes)})</span>
                     </div>
                   </div>
                 </div>
 
               {/* Pie Chart Representation */}
               <div className="flex justify-center">
-                <div className="relative w-24 h-24">
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24">
                   <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                     <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#0a0a0a" strokeWidth="3" />
                     <circle 
@@ -799,7 +800,7 @@ export default function ComputerPage() {
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-[8px] font-black text-orange-500 tracking-widest">SYNC</span>
+                    <span className="text-[7px] sm:text-[8px] font-black text-orange-500 tracking-widest">SYNC</span>
                   </div>
                 </div>
               </div>
@@ -936,11 +937,11 @@ export default function ComputerPage() {
           </div>
         </div>
 
-        {/* Right Column: Writing Area (Cols 6-12) */}
-        <div className="col-span-7 flex flex-col overflow-hidden bg-black border-r border-zinc-900/50">
+        {/* Right Column: Writing Area (Cols 6-12) - Mobile: full width below */}
+        <div className="flex-1 md:col-span-7 flex flex-col overflow-hidden bg-black border-r border-zinc-900/50 border-t md:border-t-0">
           
           {/* Daily Notes - WritingC style */}
-          <div className="flex-1 flex flex-col p-8 border-b border-zinc-900 overflow-hidden relative">
+          <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 border-b border-zinc-900 overflow-hidden relative">
             {/* Background scanner effect */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none opacity-20" />
             
