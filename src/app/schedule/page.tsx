@@ -297,6 +297,7 @@ export default function SchedulePage() {
         if (eventsData && Array.isArray(eventsData)) {
           setEvents(eventsData);
         }
+        const dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
         const parserTextData = await api.getParserTexts(dateString);
         if (parserTextData) {
           setDailyParserTexts(prev => ({ ...prev, [dateString]: parserTextData.content || '' }));
@@ -311,7 +312,7 @@ export default function SchedulePage() {
     return () => {
       window.removeEventListener('life26-update' as any, handleSync);
     };
-  }, [dateString]);
+  }, [currentDate]);
 
   const dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
 
