@@ -67,9 +67,6 @@ const Sidebar = () => {
     return () => clearInterval(interval);
   }, [dateString]);
 
-  const today = new Date();
-  const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
   const getTodayData = async () => {
     if (typeof window === 'undefined') return { events: [], text: "" };
     
