@@ -81,29 +81,53 @@ const Sidebar = () => {
 
   const handleSave = async (newEvents: Event[], rawText: string) => {
     try {
-      // Get all existing events
+      // 1. טעינת כל האירועים הקיימים של היום מה-API
       const allEvents = await api.getEvents();
+      const allExistingEvents = allEvents.filter(e => e.dateString === dateString);
       
-      // Filter out today's events and add new ones
-      const filteredEvents = allEvents.filter(e => e.dateString !== dateString);
-      const updatedEvents = [...filteredEvents, ...newEvents];
-      
-      // Save all events to API
-      for (const event of updatedEvents) {
-        await api.saveEvent(event);
+      // 2. הפרדה בין אירועים לעדכון, יצירה, ומחיקה
+      const eventsToUpdate: Event[] = [];
+      const eventsToCreate: Event[] = [];
+      const incomingEventIds = new Set<string>();
+
+      newEvents.forEach(eventData => {
+        if (eventData.id) {
+          // אם יש ID, זה אירוע קיים שצריך לעדכן
+          eventsToUpdate.push(eventData);
+          incomingEventIds.add(eventData.id);
+        } else {
+          // אם אין ID, זה אירוע חדש
+          eventsToCreate.push(eventData);
+        }
+      });
+
+      // 3. זיהוי אירועים למחיקה (קיימים במסד אבל לא ברשימה החדשה)
+      const eventsToDelete = allExistingEvents.filter(
+        existingEvent => !incomingEventIds.has(existingEvent.id)
+      );
+
+      // 4. ביצוע המחיקות
+      for (const eventToDelete of eventsToDelete) {
+        await api.deleteEvent(eventToDelete.id);
       }
-      
-      // Save parser text to API
-      try {
-        await api.saveParserTexts({
-          id: `parser-${dateString}`,
-          dateString,
-          content: rawText,
-        });
-      } catch (error) {
-        console.error('Failed to save parser text', error);
+
+      // 5. ביצוע העדכונים
+      for (const eventToUpdate of eventsToUpdate) {
+        await api.saveEvent(eventToUpdate);
       }
-      
+
+      // 6. יצירת אירועים חדשים
+      for (const eventToCreate of eventsToCreate) {
+        await api.saveEvent(eventToCreate);
+      }
+
+      // 7. שמירת parser text
+      await api.saveParserTexts({
+        id: `parser-${dateString}`,
+        dateString,
+        content: rawText,
+      });
+
       setIsParserOpen(false);
       
       // Update local state
@@ -112,7 +136,7 @@ const Sidebar = () => {
       
       // Notify other components
       window.dispatchEvent(new CustomEvent('life26-update', { 
-        detail: { type: 'eventsUpdated', source: 'sidebar' } 
+        detail: { type: 'events-updated', source: 'sidebar' } 
       }));
     } catch (error) {
       console.error('Failed to save events', error);

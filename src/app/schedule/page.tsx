@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { 
   ChevronRight, 
   ChevronLeft, 
@@ -229,69 +229,85 @@ export default function SchedulePage() {
   const [isParserOpen, setIsParserOpen] = useState(false);
   const timelineScrollRef = useRef<HTMLDivElement>(null);
 
+  const dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+
+  const formattedDate = new Intl.DateTimeFormat('he-IL', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric'
+  }).format(currentDate);
+
+  // טעינה ראשונית - רק פעם אחת
+  const loadInitialData = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const [eventsData, categoriesData] = await Promise.all([
+        api.getEvents(),
+        api.getCategories(),
+      ]);
+      
+      if (eventsData && Array.isArray(eventsData)) {
+        setEvents(eventsData);
+      }
+      
+      if (categoriesData && Array.isArray(categoriesData) && categoriesData.length > 0) {
+        const mergedCategories: Category[] = [];
+        INITIAL_CATEGORIES.forEach(defaultCat => {
+          const existing = categoriesData.find((c: Category) => c.id === defaultCat.id);
+          if (existing) {
+            mergedCategories.push({
+              ...existing,
+              iconName: defaultCat.iconName,
+              color: defaultCat.color
+            });
+          } else {
+            mergedCategories.push(defaultCat);
+          }
+        });
+        categoriesData.forEach((cat: Category) => {
+          if (!INITIAL_CATEGORIES.some(dc => dc.id === cat.id)) {
+            mergedCategories.push(cat);
+          }
+        });
+        setCategories(mergedCategories);
+      } else {
+        setCategories(INITIAL_CATEGORIES);
+      }
+      
+      // Load parser texts and photos from API
+      const parserTextData = await api.getParserTexts(dateString);
+      if (parserTextData) {
+        setDailyParserTexts(prev => ({ ...prev, [dateString]: parserTextData.content || '' }));
+      }
+      
+      const photoData = await api.getPhotos(dateString);
+      if (photoData) {
+        setDailyPhotos(prev => ({ ...prev, [dateString]: photoData.photoData }));
+      }
+    } catch (error) {
+      console.error('Error loading from API:', error);
+    }
+  }, [dateString]);
+
   // Load from API after mount (client-side only)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
     const loadData = async () => {
-      try {
-        const [eventsData, categoriesData] = await Promise.all([
-          api.getEvents(),
-          api.getCategories(),
-        ]);
-        
-        if (eventsData && Array.isArray(eventsData) && eventsData.length > 0) {
-          setEvents(eventsData);
-        }
-        
-        if (categoriesData && Array.isArray(categoriesData) && categoriesData.length > 0) {
-          const mergedCategories: Category[] = [];
-          INITIAL_CATEGORIES.forEach(defaultCat => {
-            const existing = categoriesData.find((c: Category) => c.id === defaultCat.id);
-            if (existing) {
-              mergedCategories.push({
-                ...existing,
-                iconName: defaultCat.iconName,
-                color: defaultCat.color
-              });
-            } else {
-              mergedCategories.push(defaultCat);
-            }
-          });
-          categoriesData.forEach((cat: Category) => {
-            if (!INITIAL_CATEGORIES.some(dc => dc.id === cat.id)) {
-              mergedCategories.push(cat);
-            }
-          });
-          setCategories(mergedCategories);
-        } else {
-          setCategories(INITIAL_CATEGORIES);
-        }
-        
-        // Load parser texts and photos from API
-        const parserTextData = await api.getParserTexts(dateString);
-        if (parserTextData) {
-          setDailyParserTexts(prev => ({ ...prev, [dateString]: parserTextData.content || '' }));
-        }
-        
-        const photoData = await api.getPhotos(dateString);
-        if (photoData) {
-          setDailyPhotos(prev => ({ ...prev, [dateString]: photoData.photoData }));
-        }
-      } catch (error) {
-        console.error('Error loading from API:', error);
-        // No fallback - API is required
-      } finally {
-        setIsLoaded(true);
-      }
+      await loadInitialData();
+      setIsLoaded(true);
     };
 
     loadData();
-  }, []);
+  }, [loadInitialData]);
 
   // Synchronize events when they change elsewhere
   useEffect(() => {
-    const handleSync = async () => {
+    const handleSync = async (e: CustomEvent) => {
+      // לא להגיב לאירועים מהדף עצמו
+      if (e.detail?.source === 'schedule-page') return;
+      
       try {
         const eventsData = await api.getEvents();
         if (eventsData && Array.isArray(eventsData)) {
@@ -307,20 +323,137 @@ export default function SchedulePage() {
       }
     };
 
-    window.addEventListener('life26-update' as any, handleSync);
+    window.addEventListener('life26-update' as any, handleSync as any);
     
     return () => {
-      window.removeEventListener('life26-update' as any, handleSync);
+      window.removeEventListener('life26-update' as any, handleSync as any);
     };
   }, [currentDate]);
 
-  const dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+  // ✅ פונקציית שמירה מרכזית - נקראת רק באופן מפורש
+  const handleAddEvents = async (newEvents: Event[], inputText: string) => {
+    try {
+      // 1. טעינת כל האירועים הקיימים של היום מה-API
+      const allEvents = await api.getEvents();
+      const allExistingEvents = allEvents.filter(e => e.dateString === dateString);
+      
+      console.log('📊 Existing events for today:', allExistingEvents.length);
+      console.log('📝 New events to save:', newEvents.length);
+      
+      // 2. הפרדה בין אירועים לעדכון, יצירה, ומחיקה
+      const eventsToUpdate: Event[] = [];
+      const eventsToCreate: Event[] = [];
+      const incomingEventIds = new Set<string>();
 
-  const formattedDate = new Intl.DateTimeFormat('he-IL', {
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric'
-  }).format(currentDate);
+      newEvents.forEach(eventData => {
+        if (eventData.id) {
+          // אם יש ID, זה אירוע קיים שצריך לעדכן
+          eventsToUpdate.push(eventData);
+          incomingEventIds.add(eventData.id);
+        } else {
+          // אם אין ID, זה אירוע חדש
+          eventsToCreate.push(eventData);
+        }
+      });
+
+      // 3. זיהוי אירועים למחיקה (קיימים במסד אבל לא ברשימה החדשה)
+      const eventsToDelete = allExistingEvents.filter(
+        existingEvent => !incomingEventIds.has(existingEvent.id)
+      );
+
+      console.log('🗑️ Events to delete:', eventsToDelete.length);
+      console.log('✏️ Events to update:', eventsToUpdate.length);
+      console.log('➕ Events to create:', eventsToCreate.length);
+
+      // 4. ביצוע המחיקות (חשוב: לפני העדכונים והיצירות)
+      const deletePromises = eventsToDelete.map(async (eventToDelete) => {
+        try {
+          await api.deleteEvent(eventToDelete.id);
+          console.log('✅ Deleted event:', eventToDelete.id);
+        } catch (error) {
+          console.error('❌ Failed to delete event:', eventToDelete.id, error);
+          throw error;
+        }
+      });
+      await Promise.all(deletePromises);
+
+      // 5. ביצוע העדכונים
+      const updatePromises = eventsToUpdate.map(async (eventToUpdate) => {
+        try {
+          await api.saveEvent(eventToUpdate);
+          console.log('✅ Updated event:', eventToUpdate.id);
+        } catch (error) {
+          console.error('❌ Failed to update event:', eventToUpdate.id, error);
+          throw error;
+        }
+      });
+      await Promise.all(updatePromises);
+
+      // 6. יצירת אירועים חדשים
+      const createPromises = eventsToCreate.map(async (eventToCreate) => {
+        try {
+          await api.saveEvent(eventToCreate);
+          console.log('✅ Created event:', eventToCreate.id);
+        } catch (error) {
+          console.error('❌ Failed to create event:', eventToCreate.id, error);
+          throw error;
+        }
+      });
+      await Promise.all(createPromises);
+
+      // 7. המתנה קצרה כדי לוודא שהמסד הנתונים מעודכן
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // 8. רענון הנתונים מה-API (חשוב! - אחרי כל הפעולות)
+      // טעינה מחדש ישירה כדי לוודא שהנתונים מעודכנים
+      const refreshedEvents = await api.getEvents();
+      const refreshedTodayEvents = refreshedEvents.filter(e => e.dateString === dateString);
+      console.log('🔄 After operations - Events for today:', refreshedTodayEvents.length);
+      
+      if (refreshedEvents && Array.isArray(refreshedEvents)) {
+        setEvents(refreshedEvents);
+      }
+      
+      // 9. בניית parser text עם shortId מה-אירועים המעודכנים
+      // זה חשוב כדי שבפעם הבאה שנפתח את המודל, נראה את ה-shortId
+      const generateShortId = (fullId: string): string => {
+        return fullId.slice(-6).toLowerCase();
+      };
+      
+      const parserTextWithShortId = refreshedTodayEvents
+        .sort((a, b) => a.time.localeCompare(b.time))
+        .map((e: Event) => {
+          const shortId = generateShortId(e.id);
+          const timeStr = e.time.replace(':', '');
+          return `[${shortId}] ${timeStr} ${e.title}`;
+        }).join('\n');
+      
+      // 10. שמירת parser text עם shortId
+      await api.saveParserTexts({
+        id: `parser-${dateString}`,
+        dateString,
+        content: parserTextWithShortId,
+      });
+      
+      // 11. עדכון dailyParserTexts עם הטקסט החדש (עם shortId)
+      setDailyParserTexts(prev => ({ 
+        ...prev, 
+        [dateString]: parserTextWithShortId || ''
+      }));
+      
+      console.log('📝 Updated parser text for', dateString, ':', parserTextWithShortId || '(empty)');
+
+      // 10. הודעה לדפים אחרים
+      window.dispatchEvent(new CustomEvent('life26-update', { 
+        detail: { type: 'events-updated', source: 'schedule-page' } 
+      }));
+
+      console.log('✅ All operations completed successfully');
+
+    } catch (error) {
+      console.error('❌ Error handling events:', error);
+    }
+  };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -375,27 +508,7 @@ export default function SchedulePage() {
     }
   };
 
-  useEffect(() => {
-    if (!isLoaded || typeof window === 'undefined') return;
-    
-    // Save events to API
-    const saveEvents = async () => {
-      try {
-        for (const event of events) {
-          await api.saveEvent(event);
-        }
-        // Notify other pages
-        window.dispatchEvent(new CustomEvent('life26-update', { 
-          detail: { type: 'events-updated', source: 'schedule-page' } 
-        }));
-      } catch (error) {
-        console.error('Failed to save events to API', error);
-        // No fallback - API is required
-      }
-    };
-    
-    saveEvents();
-  }, [events, isLoaded]);
+  // ❌ אין useEffect על events! השמירה נעשית רק דרך handleAddEvents
 
   useEffect(() => {
     if (!isLoaded || typeof window === 'undefined') return;
@@ -850,22 +963,14 @@ export default function SchedulePage() {
       {/* Modals */}
       {isCategoryModalOpen && <CategoryModal categories={categories} onClose={() => setIsCategoryModalOpen(false)} onSave={setCategories} />}
       {isParserOpen && (
-        <ParserModal dateString={dateString} categories={categories} existingEvents={dailyEvents} initialText={dailyParserTexts[dateString] || ""} 
-          onClose={() => setIsParserOpen(false)} onSave={async (newEvents: Event[], inputText: string) => {
-            setEvents(prev => [...prev.filter(e => e.dateString !== dateString), ...newEvents]);
-            setDailyParserTexts(prev => ({...prev, [dateString]: inputText}));
-            
-            // Save parser text to API
-            try {
-              await api.saveParserTexts({
-                id: `parser-${dateString}`,
-                dateString,
-                content: inputText,
-              });
-            } catch (error) {
-              console.error('Failed to save parser text', error);
-            }
-            
+        <ParserModal 
+          dateString={dateString} 
+          categories={categories} 
+          existingEvents={dailyEvents} 
+          initialText={dailyParserTexts[dateString] || ""} 
+          onClose={() => setIsParserOpen(false)} 
+          onSave={async (newEvents: Event[], inputText: string) => {
+            await handleAddEvents(newEvents, inputText);
             setIsParserOpen(false);
           }}
         />

@@ -13,6 +13,11 @@ interface ParserModalProps {
   onSave: (parsedEvents: Event[], rawText: string) => void;
 }
 
+// פונקציה ליצירת מזהה מקוצר (6 תווים אחרונים)
+const generateShortId = (fullId: string): string => {
+  return fullId.slice(-6).toLowerCase();
+};
+
 export function ParserModal({ 
   dateString, 
   categories, 
@@ -21,42 +26,88 @@ export function ParserModal({
   onClose, 
   onSave 
 }: ParserModalProps) {
-  const [input, setInput] = useState(
-    initialText || 
-    (existingEvents.length > 0 
-      ? existingEvents.map((e: Event) => `${e.time} ${e.title}`).join('\n') 
-      : "")
-  );
+  // יצירת טקסט התחלתי מאירועים קיימים
+  const getInitialText = () => {
+    // אם יש אירועים קיימים, תמיד להשתמש בהם (עם shortId)
+    // זה עדיף על initialText כי initialText יכול להיות ישן ללא shortId
+    if (existingEvents.length > 0) {
+      return existingEvents
+        .sort((a, b) => a.time.localeCompare(b.time))
+        .map((e: Event) => {
+          const shortId = generateShortId(e.id);
+          const timeStr = e.time.replace(':', '');
+          return `[${shortId}] ${timeStr} ${e.title}`;
+        }).join('\n');
+    }
+    // רק אם אין אירועים קיימים, להשתמש ב-initialText
+    if (initialText) {
+      return initialText;
+    }
+    return "";
+  };
+
+  const [input, setInput] = useState(getInitialText());
+
+  // עדכון הטקסט כשהנתונים משתנים (כל פעם שהמודל נפתח)
+  useEffect(() => {
+    const newText = getInitialText();
+    // תמיד מעדכן, גם אם הטקסט ריק (כדי למחוק אירועים)
+    setInput(newText);
+  }, [dateString, initialText, existingEvents]);
   const [parsed, setParsed] = useState<Event[]>([]);
 
   useEffect(() => {
     const lines = input.split('\n').filter((line: string) => line.trim());
     const newEvents: Event[] = [];
     lines.forEach((line: string) => {
-      const timeMatch = line.match(/^(\d{2}):?(\d{2})/);
-      if (timeMatch) {
-        const title = line.replace(/^(\d{2}):?(\d{2})/, "").trim();
-        if (title) {
+      // תמיכה בפורמט: [shortId] HHMM title או HHMM title
+      const eventRegex = /^(?:\[([a-f0-9]{6})\]\s*)?(\d{2}):?(\d{2})\s+(.+)/;
+      const eventMatch = line.match(eventRegex);
+      
+      if (eventMatch) {
+        const [, shortId, hour, minute, title] = eventMatch;
+        const timeStr = `${hour}:${minute}`;
+        const titleTrimmed = title.trim();
+        
+        if (titleTrimmed) {
           const defaultCategory = categories.find((c: Category) => c.id === "0") || categories[0];
           let categoryId = defaultCategory?.id || "0";
           for (const cat of categories) {
-            if (cat.id !== "0" && cat.keywords?.some((k: string) => title.toLowerCase().includes(k.toLowerCase()))) {
+            if (cat.id !== "0" && cat.keywords?.some((k: string) => titleTrimmed.toLowerCase().includes(k.toLowerCase()))) {
               categoryId = cat.id;
               break;
             }
           }
-          newEvents.push({ 
-            id: Math.random().toString(36).substr(2, 9), 
-            dateString, 
-            time: `${timeMatch[1]}:${timeMatch[2]}`, 
-            title, 
-            categoryId 
-          });
+          
+          // מציאת אירוע קיים לפי shortId
+          let existingEvent: Event | undefined = undefined;
+          if (shortId) {
+            existingEvent = existingEvents.find(
+              e => generateShortId(e.id) === shortId
+            );
+          }
+          
+          const eventData: Event = {
+            dateString,
+            time: timeStr,
+            title: titleTrimmed,
+            categoryId,
+          };
+
+          // ✅ אם זה אירוע קיים, שמור את ה-ID שלו
+          if (existingEvent) {
+            eventData.id = existingEvent.id; // שמירת ה-ID המקורי!
+          } else {
+            // אם אין existingEvent, eventData לא יכיל id (אירוע חדש)
+            eventData.id = Math.random().toString(36).substr(2, 9);
+          }
+
+          newEvents.push(eventData);
         }
       }
     });
     setParsed(newEvents);
-  }, [input, dateString, categories]);
+  }, [input, dateString, categories, existingEvents]);
 
   return (
     <div className="fixed inset-0 bg-black/98 z-[110] flex items-center justify-center md:p-4 pt-safe" onClick={onClose} dir="rtl">

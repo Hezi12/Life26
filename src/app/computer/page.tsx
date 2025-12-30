@@ -363,11 +363,12 @@ export default function ComputerPage() {
     dailyTopics.forEach(topic => {
       const event = dailyEvents.find(e => e.id === topic.eventId);
       if (!event) {
-        // Event was deleted, delete topic
+        // Event was deleted (ID doesn't exist), delete topic from database
         topicsToDelete.push(topic.id);
         return;
       }
 
+      // Event exists - check if time changed and update topic accordingly
       // Calculate new session times
       const [eventHour, eventMin] = event.time.split(':').map(Number);
       const eventStartMinutes = eventHour * 60 + eventMin;
@@ -391,14 +392,11 @@ export default function ComputerPage() {
         eventEndMinutes = eventStartMinutes + 30;
       }
 
-      const eventStartTime = minutesToTime(eventStartMinutes);
-      const eventEndTime = minutesToTime(eventEndMinutes);
-
       const topicStart = timeToMinutes(topic.startTime);
       const topicEnd = timeToMinutes(topic.endTime);
       const topicEndAdjusted = topicEnd < topicStart ? topicEnd + 24 * 60 : topicEnd;
 
-      // Check if topic is outside event bounds
+      // Check if topic is outside event bounds (event time changed)
       if (topicStart < eventStartMinutes || topicEndAdjusted > eventEndMinutes) {
         // Adjust topic times proportionally or delete if too far out
         const topicStartRelative = topicStart - eventStartMinutes;
@@ -411,6 +409,7 @@ export default function ComputerPage() {
           const newTopicEnd = newTopicStart + (topicEndAdjusted - topicStart) * ratio;
 
           if (newTopicEnd <= eventEndMinutes) {
+            // Update topic times to match new event time
             topicsToUpdate.push({
               ...topic,
               startTime: minutesToTime(Math.round(newTopicStart)),
@@ -492,6 +491,22 @@ export default function ComputerPage() {
       }
     });
 
+    // Execute deletions from database first (only if event ID was deleted)
+    if (topicsToDelete.length > 0) {
+      const deleteTopics = async () => {
+        try {
+          for (const topicId of topicsToDelete) {
+            await api.deleteWorkTopic(topicId);
+            console.log('✅ Deleted work topic from database:', topicId);
+          }
+        } catch (error) {
+          console.error('❌ Failed to delete work topics:', error);
+        }
+      };
+      deleteTopics();
+    }
+
+    // Update state (deletions, updates, and new topics)
     if (topicsToUpdate.length > 0 || topicsToDelete.length > 0 || newAutoTopics.length > 0) {
       setWorkTopics(prev => {
         let updated = prev.map(t => {
