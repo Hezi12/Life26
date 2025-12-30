@@ -32,6 +32,7 @@ import {
   PomodoroSettings 
 } from "@/lib/types";
 import { ICON_MAP, INITIAL_CATEGORIES } from "@/lib/constants";
+import { api } from '@/lib/api';
 import { playSound, initAudio } from "@/lib/audio";
 
 // --- Utility Functions ---
@@ -102,85 +103,87 @@ export default function HomePage() {
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     
-    try {
-      const savedEvents = localStorage.getItem('life26-events');
-      if (savedEvents) setEvents(JSON.parse(savedEvents));
+    const loadData = async () => {
+      try {
+        const [eventsData, categoriesData, topicsData, subjectsData, pomodoroData] = await Promise.all([
+          api.getEvents(),
+          api.getCategories(),
+          api.getWorkTopics(),
+          api.getWorkSubjects(),
+          api.getPomodoroSettings(),
+        ]);
+        
+        setEvents(eventsData);
+        setCategories(categoriesData.length > 0 ? categoriesData : INITIAL_CATEGORIES);
+        setWorkTopics(topicsData);
+        setWorkSubjects(subjectsData);
+        setPomodoroSettings(pomodoroData);
 
-      const savedCategories = localStorage.getItem('life26-categories');
-      if (savedCategories) setCategories(JSON.parse(savedCategories));
+        const dailyNotesData = await api.getDailyNotes(dateString);
+        if (dailyNotesData) setDailyNotes(dailyNotesData);
 
-      const savedTopics = localStorage.getItem('life26-work-topics');
-      if (savedTopics) setWorkTopics(JSON.parse(savedTopics));
+        const stickyNotesData = await api.getStickyNotes();
+        if (stickyNotesData) setStickyNotes(stickyNotesData);
 
-      const savedSubjects = localStorage.getItem('life26-work-subjects');
-      if (savedSubjects) setWorkSubjects(JSON.parse(savedSubjects));
-
-      const savedDailyNotes = localStorage.getItem('life26-daily-notes');
-      if (savedDailyNotes) {
-        const allNotes = JSON.parse(savedDailyNotes);
-        const notes = Object.values(allNotes).find((n: any) => n.dateString === dateString) as DailyNotes;
-        if (notes) setDailyNotes(notes);
+      } catch (e) {
+        console.error("Failed to load dashboard data", e);
+        // Fallback to localStorage if API fails
+        try {
+          const savedEvents = localStorage.getItem('life26-events');
+          if (savedEvents) setEvents(JSON.parse(savedEvents));
+          const savedCategories = localStorage.getItem('life26-categories');
+          if (savedCategories) setCategories(JSON.parse(savedCategories));
+        } catch (fallbackError) {
+          console.error("Fallback failed", fallbackError);
+        }
       }
+      
+      setIsLoaded(true);
+    };
 
-      const savedStickyNotes = localStorage.getItem('life26-sticky-notes');
-      if (savedStickyNotes) setStickyNotes(JSON.parse(savedStickyNotes));
-
-      const savedPomodoro = localStorage.getItem('life26-pomodoro-settings');
-      if (savedPomodoro) setPomodoroSettings(JSON.parse(savedPomodoro));
-
-    } catch (e) {
-      console.error("Failed to load dashboard data", e);
-    }
-    
-    setIsLoaded(true);
+    loadData();
     return () => clearInterval(timer);
   }, [dateString]);
 
   // 2. Synchronization Logic
   useEffect(() => {
-    const handleSync = (e: CustomEvent) => {
+    const handleSync = async (e: CustomEvent) => {
       if (e.detail?.source === 'dashboard-page') return;
 
-      const savedEvents = localStorage.getItem('life26-events');
-      if (savedEvents) setEvents(JSON.parse(savedEvents));
-
-      if (e.detail?.type === 'workTopicsUpdated') {
-        const saved = localStorage.getItem('life26-work-topics');
-        if (saved) setWorkTopics(JSON.parse(saved));
-      }
-      
-      if (e.detail?.type === 'notes-updated') {
-        const savedDaily = localStorage.getItem('life26-daily-notes');
-        if (savedDaily) {
-          const allNotes = JSON.parse(savedDaily);
-          const notes = Object.values(allNotes).find((n: any) => n.dateString === dateString) as DailyNotes;
-          setDailyNotes(notes || null);
-          if (dailyNotesRef.current && !isTypingRef.current) {
-            dailyNotesRef.current.value = notes?.content || '';
+      try {
+        if (e.detail?.type === 'workTopicsUpdated') {
+          const topics = await api.getWorkTopics(dateString);
+          setWorkTopics(topics);
+        }
+        
+        if (e.detail?.type === 'notes-updated') {
+          const dailyNotesData = await api.getDailyNotes(dateString);
+          if (dailyNotesData) {
+            setDailyNotes(dailyNotesData);
+            if (dailyNotesRef.current && !isTypingRef.current) {
+              dailyNotesRef.current.value = dailyNotesData.content || '';
+            }
+          }
+          const stickyNotesData = await api.getStickyNotes();
+          if (stickyNotesData) {
+            setStickyNotes(stickyNotesData);
+            if (stickyNotesRef.current && !isTypingRef.current) {
+              stickyNotesRef.current.value = stickyNotesData.content || '';
+            }
           }
         }
-        const savedSticky = localStorage.getItem('life26-sticky-notes');
-        if (savedSticky) {
-          const notes = JSON.parse(savedSticky);
-          setStickyNotes(notes);
-          if (stickyNotesRef.current && !isTypingRef.current) {
-            stickyNotesRef.current.value = notes?.content || '';
-          }
-        }
-      }
-    };
 
-    const handleStorage = () => {
-      const savedEvents = localStorage.getItem('life26-events');
-      if (savedEvents) setEvents(JSON.parse(savedEvents));
+        const eventsData = await api.getEvents();
+        setEvents(eventsData);
+      } catch (error) {
+        console.error('Sync failed', error);
+      }
     };
 
     window.addEventListener('life26-update' as any, handleSync as any);
-    window.addEventListener('storage', handleStorage);
     
     return () => {
       window.removeEventListener('life26-update' as any, handleSync as any);
-      window.removeEventListener('storage', handleStorage);
     };
   }, [dateString]);
 
@@ -338,15 +341,19 @@ export default function HomePage() {
   }, [sessionTopics, currentTime]);
 
   // 5. Handlers for sync
-  const handleTopicsUpdate = () => {
-    const saved = localStorage.getItem('life26-work-topics');
-    if (saved) setWorkTopics(JSON.parse(saved));
-    window.dispatchEvent(new CustomEvent('life26-update', { 
-      detail: { type: 'workTopicsUpdated', source: 'dashboard-page' } 
-    }));
+  const handleTopicsUpdate = async () => {
+    try {
+      const topics = await api.getWorkTopics(dateString);
+      setWorkTopics(topics);
+      window.dispatchEvent(new CustomEvent('life26-update', { 
+        detail: { type: 'workTopicsUpdated', source: 'dashboard-page' } 
+      }));
+    } catch (error) {
+      console.error('Failed to update topics', error);
+    }
   };
 
-  const handleAddTopic = () => {
+  const handleAddTopic = async () => {
     if (!newTopicSubjectId || !newStartTime || !newEndTime || !activeSession) return;
     const now = new Date();
 
@@ -360,10 +367,13 @@ export default function HomePage() {
       dateString: now.toISOString().split('T')[0]
     };
 
-    const saved = localStorage.getItem('life26-work-topics');
-    localStorage.setItem('life26-work-topics', JSON.stringify([...(saved ? JSON.parse(saved) : []), newTopic]));
-    handleTopicsUpdate();
-    setIsConfigOpen(false);
+    try {
+      await api.saveWorkTopic(newTopic);
+      await handleTopicsUpdate();
+      setIsConfigOpen(false);
+    } catch (error) {
+      console.error('Failed to save topic', error);
+    }
   };
 
   // Initialize config values when opening
@@ -381,7 +391,7 @@ export default function HomePage() {
     }
   }, [isConfigOpen, workSubjects, sessionTopics, activeSession]);
 
-  const saveDailyNotes = useCallback(() => {
+  const saveDailyNotes = useCallback(async () => {
     if (typeof window === 'undefined' || isTypingRef.current) return;
     
     const content = dailyNotesRef.current?.value || '';
@@ -391,18 +401,18 @@ export default function HomePage() {
       content,
     };
 
-    const saved = localStorage.getItem('life26-daily-notes');
-    const allNotes = saved ? JSON.parse(saved) : {};
-    allNotes[notes.id] = notes;
-    localStorage.setItem('life26-daily-notes', JSON.stringify(allNotes));
-    setDailyNotes(notes);
-    
-    window.dispatchEvent(new CustomEvent('life26-update', { 
-      detail: { type: 'notes-updated', source: 'dashboard-page' } 
-    }));
+    try {
+      await api.saveDailyNotes(notes);
+      setDailyNotes(notes);
+      window.dispatchEvent(new CustomEvent('life26-update', { 
+        detail: { type: 'notes-updated', source: 'dashboard-page' } 
+      }));
+    } catch (error) {
+      console.error('Failed to save daily notes', error);
+    }
   }, [dateString, dailyNotes]);
 
-  const saveStickyNotes = useCallback(() => {
+  const saveStickyNotes = useCallback(async () => {
     if (typeof window === 'undefined' || isTypingRef.current) return;
     
     const content = stickyNotesRef.current?.value || '';
@@ -411,12 +421,15 @@ export default function HomePage() {
       content,
     };
 
-    localStorage.setItem('life26-sticky-notes', JSON.stringify(notes));
-    setStickyNotes(notes);
-    
-    window.dispatchEvent(new CustomEvent('life26-update', { 
-      detail: { type: 'notes-updated', source: 'dashboard-page' } 
-    }));
+    try {
+      await api.saveStickyNotes(notes);
+      setStickyNotes(notes);
+      window.dispatchEvent(new CustomEvent('life26-update', { 
+        detail: { type: 'notes-updated', source: 'dashboard-page' } 
+      }));
+    } catch (error) {
+      console.error('Failed to save sticky notes', error);
+    }
   }, [stickyNotes]);
 
   const [hoveredWeek, setHoveredWeek] = useState<number | null>(null);
