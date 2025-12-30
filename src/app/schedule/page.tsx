@@ -526,8 +526,8 @@ export default function SchedulePage() {
     <div className="h-screen overflow-hidden flex flex-col bg-black text-white font-mono" dir="rtl">
       
       {/* Header - Aligned with Computer Page */}
-      <header className="flex items-center justify-between p-6 border-b border-zinc-900 bg-black/50 backdrop-blur-md shrink-0">
-        <div className="flex items-center gap-6">
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-4 sm:p-6 border-b border-zinc-900 bg-black/50 backdrop-blur-md shrink-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
           <h1 className="text-xl font-black italic tracking-[0.2em] text-white">DAILY OPS</h1>
           
           <div className="flex items-center gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-sm">
@@ -601,18 +601,18 @@ export default function SchedulePage() {
         
         {viewMode === 'daily' ? (
           <div className="flex-1 flex overflow-hidden">
-            {/* 1. MAIN GRID (Daily View) */}
-            <div className="flex-1 grid grid-cols-12 gap-0 overflow-hidden">
-              {/* Timeline Column (Cols 1-5) */}
-              <div className="col-span-5 border-l border-zinc-900 bg-[#050505] flex flex-col overflow-hidden">
-                <div className="p-6 border-b border-zinc-900 bg-zinc-950/20 shrink-0">
+            {/* 1. MAIN GRID (Daily View) - Mobile: column, Desktop: grid */}
+            <div className="flex-1 flex flex-col md:grid md:grid-cols-12 gap-0 overflow-hidden">
+              {/* Timeline Column (Cols 1-5) - Mobile: full width */}
+              <div className="flex-1 md:col-span-5 border-l border-zinc-900 bg-[#050505] flex flex-col overflow-hidden">
+                <div className="p-4 sm:p-6 border-b border-zinc-900 bg-zinc-950/20 shrink-0">
                   <div className="flex items-center gap-2">
                     <div className="w-1 h-4 bg-orange-500 shadow-[0_0_8px_#ff5722]" />
-                    <h2 className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 font-black">TIMELINE</h2>
+                    <h2 className="text-[9px] sm:text-[10px] uppercase tracking-[0.3em] text-zinc-500 font-black">TIMELINE</h2>
                   </div>
                 </div>
 
-                <div ref={timelineScrollRef} className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+                <div ref={timelineScrollRef} className="flex-1 overflow-y-auto p-4 sm:p-6 scrollbar-hide">
                   <div className="space-y-3 relative">
                     {dailyEvents.length > 0 ? (
                       dailyEvents.map((event, index) => {
@@ -747,13 +747,13 @@ export default function SchedulePage() {
             </div>
 
                 {/* Metrics Widget */}
-                <div className="flex-1 bg-black p-8 flex flex-col overflow-hidden">
-                  <div className="flex items-center justify-between mb-8">
+                <div className="flex-1 bg-black p-4 sm:p-6 md:p-8 flex flex-col overflow-hidden">
+                  <div className="flex items-center justify-between mb-4 sm:mb-6 md:mb-8">
                     <div className="flex items-center gap-2">
                       <div className="w-1 h-4 bg-orange-500 shadow-[0_0_8px_#ff5722]" />
-                      <h2 className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 font-black">METRICS</h2>
+                      <h2 className="text-[9px] sm:text-[10px] uppercase tracking-[0.3em] text-zinc-500 font-black">METRICS</h2>
                     </div>
-                    <Activity size={16} className="text-zinc-800 animate-pulse" />
+                    <Activity size={14} className="sm:w-4 sm:h-4 text-zinc-800 animate-pulse" />
                   </div>
 
                   {(() => {
@@ -764,7 +764,7 @@ export default function SchedulePage() {
                     if (activeCategories.length === 0 && !hasNoCategoryDuration) {
                       return (
                         <div className="flex flex-col items-center justify-center flex-1 text-zinc-800 border border-dashed border-zinc-900 rounded-sm">
-                          <Activity size={32} className="opacity-20 mb-4" />
+                          <Activity size={24} className="sm:w-8 sm:h-8 opacity-20 mb-4" />
                         </div>
                       );
                     }
@@ -791,23 +791,23 @@ export default function SchedulePage() {
                     const totalMins = totalMinutes % 60;
 
                     return (
-                      <div className="grid grid-cols-2 gap-12 flex-1 items-center">
-                        <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 md:gap-12 flex-1 items-center">
+                        <div className="space-y-3 sm:space-y-4">
                           {sortedCategories.slice(0, 8).map(cat => {
                             const duration = categoryDurations[cat.id] || 0;
                             const percentage = (duration / totalMinutes) * 100;
                             return (
                               <div key={cat.id} className="space-y-2 group/metric">
                                 <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
+                                  <div className="flex items-center gap-2 sm:gap-3">
                                     <div className="w-1.5 h-4 shadow-[0_0_8px_currentColor]" style={{ backgroundColor: cat.color, color: cat.color }} />
-                                    <span className="text-xs text-zinc-300 font-black group-hover/metric:text-white transition-colors tracking-widest uppercase">{cat.name}</span>
+                                    <span className="text-[10px] sm:text-xs text-zinc-300 font-black group-hover/metric:text-white transition-colors tracking-widest uppercase">{cat.name}</span>
                                   </div>
-                                  <div className="flex items-baseline gap-3">
-                                    <span className="text-sm font-black text-white" style={{ color: cat.color }}>{Math.round(percentage)}%</span>
-                                    <span className="text-[10px] text-zinc-500 font-mono font-bold">
-                                      {Math.floor(duration/60)}<span className="text-[8px] mx-0.5">H</span>
-                                      {duration%60}<span className="text-[8px] mx-0.5">M</span>
+                                  <div className="flex items-baseline gap-2 sm:gap-3">
+                                    <span className="text-xs sm:text-sm font-black text-white" style={{ color: cat.color }}>{Math.round(percentage)}%</span>
+                                    <span className="text-[9px] sm:text-[10px] text-zinc-500 font-mono font-bold">
+                                      {Math.floor(duration/60)}<span className="text-[7px] sm:text-[8px] mx-0.5">H</span>
+                                      {duration%60}<span className="text-[7px] sm:text-[8px] mx-0.5">M</span>
                                     </span>
                                   </div>
                                 </div>
@@ -819,8 +819,8 @@ export default function SchedulePage() {
                             );
                           })}
                         </div>
-                        <div className="relative w-48 h-48 flex-shrink-0 mx-auto">
-                          <svg width="192" height="192" viewBox="0 0 100 100" className="-rotate-90">
+                        <div className="relative w-32 h-32 sm:w-48 sm:h-48 flex-shrink-0 mx-auto">
+                          <svg width="100%" height="100%" viewBox="0 0 100 100" className="-rotate-90">
                             <circle cx="50" cy="50" r="40" fill="none" stroke="#0a0a0a" strokeWidth="8" />
                             {pieSegments.map((segment) => (
                               <circle key={segment.cat.id} cx="50" cy="50" r="40" fill="none" stroke={segment.cat.color} strokeWidth="8"
@@ -829,8 +829,8 @@ export default function SchedulePage() {
                             ))}
                           </svg>
                           <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <div className="text-xl font-black text-white tracking-tighter">{totalHours > 0 ? `${totalHours}ש ` : ''}{totalMins}ד</div>
-                            <div className="text-[8px] font-black text-orange-500 uppercase tracking-[0.3em] mt-1">ACTIVE TIME</div>
+                            <div className="text-lg sm:text-xl font-black text-white tracking-tighter">{totalHours > 0 ? `${totalHours}ש ` : ''}{totalMins}ד</div>
+                            <div className="text-[7px] sm:text-[8px] font-black text-orange-500 uppercase tracking-[0.3em] mt-1">ACTIVE TIME</div>
                           </div>
                         </div>
                       </div>
@@ -840,12 +840,14 @@ export default function SchedulePage() {
               </div>
             </div>
 
-            {/* 2. DAY SPINE (Daily View only) */}
-            <DaySpine 
-              events={dailyEvents}
-              categories={categories}
-              currentDate={currentDate}
-            />
+            {/* 2. DAY SPINE (Daily View only) - Mobile: hidden or simplified */}
+            <div className="hidden md:block">
+              <DaySpine 
+                events={dailyEvents}
+                categories={categories}
+                currentDate={currentDate}
+              />
+            </div>
           </div>
         ) : (
           /* MONTHLY VIEW CONTAINER */
