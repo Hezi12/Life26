@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Habit, HabitLog } from "@/lib/types";
 import { ICON_MAP, NEON_COLORS, AVAILABLE_ICONS } from "@/lib/constants";
+import { api } from "@/lib/api";
 
 const DAYS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 
@@ -43,22 +44,49 @@ export default function HabitsPage() {
   const dateString = currentTime.toISOString().split('T')[0];
 
   useEffect(() => {
-    try {
-      const savedHabits = localStorage.getItem('life26-habits');
-      if (savedHabits) setHabits(JSON.parse(savedHabits));
-
-      const savedLogs = localStorage.getItem('life26-habit-logs');
-      if (savedLogs) setLogs(JSON.parse(savedLogs));
-    } catch (e) {
-      console.error("Failed to load habits", e);
-    }
-    setIsLoaded(true);
+    const loadData = async () => {
+      try {
+        const [habitsData, logsData] = await Promise.all([
+          api.getHabits(),
+          api.getHabitLogs(),
+        ]);
+        
+        if (habitsData && Array.isArray(habitsData)) {
+          setHabits(habitsData);
+        }
+        
+        if (logsData && Array.isArray(logsData)) {
+          const logsMap: Record<string, HabitLog> = {};
+          logsData.forEach(log => {
+            logsMap[log.id] = log;
+          });
+          setLogs(logsMap);
+        }
+      } catch (e) {
+        console.error("Failed to load habits", e);
+      }
+      setIsLoaded(true);
+    };
+    
+    loadData();
   }, []);
 
-  const saveToStorage = (updatedHabits: Habit[], updatedLogs: Record<string, HabitLog>) => {
-    localStorage.setItem('life26-habits', JSON.stringify(updatedHabits));
-    localStorage.setItem('life26-habit-logs', JSON.stringify(updatedLogs));
-    window.dispatchEvent(new CustomEvent('life26-update', { detail: { type: 'habits-updated' } }));
+  const saveToStorage = async (updatedHabits: Habit[], updatedLogs: Record<string, HabitLog>) => {
+    try {
+      // Save habits
+      for (const habit of updatedHabits) {
+        await api.saveHabit(habit);
+      }
+      
+      // Save logs
+      for (const log of Object.values(updatedLogs)) {
+        await api.saveHabitLog(log);
+      }
+      
+      window.dispatchEvent(new CustomEvent('life26-update', { detail: { type: 'habits-updated' } }));
+    } catch (error) {
+      console.error('Failed to save habits', error);
+    }
   };
 
   const toggleHabit = (habitId: string) => {

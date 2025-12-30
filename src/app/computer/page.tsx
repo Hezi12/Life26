@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { Category, Event, WorkTopic, WorkSubject, DailyNotes, StickyNotes, PomodoroSettings } from "@/lib/types";
 import { ICON_MAP, AVAILABLE_ICONS, INITIAL_CATEGORIES, NEON_COLORS } from "@/lib/constants";
 import { playSound } from "@/lib/audio";
+import { api } from "@/lib/api";
 
 // --- INITIAL DATA ---
 
@@ -94,112 +95,91 @@ export default function ComputerPage() {
 
   const dateString = formatDate(currentDate);
 
-  // Load data from localStorage
+  // Load data from API
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    try {
-      const savedEvents = localStorage.getItem('life26-events');
-      if (savedEvents) {
-        const parsed = JSON.parse(savedEvents);
-        if (Array.isArray(parsed)) {
-          setEvents(parsed);
-        }
-      }
+    const loadData = async () => {
+      try {
+        const [eventsData, categoriesData, topicsData, subjectsData, pomodoroData] = await Promise.all([
+          api.getEvents(),
+          api.getCategories(),
+          api.getWorkTopics(dateString),
+          api.getWorkSubjects(),
+          api.getPomodoroSettings(),
+        ]);
 
-      const savedCategories = localStorage.getItem('life26-categories');
-      if (savedCategories) {
-        const parsed = JSON.parse(savedCategories);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Merge with INITIAL_CATEGORIES to ensure all default categories exist
+        if (eventsData && Array.isArray(eventsData)) {
+          setEvents(eventsData);
+        }
+
+        if (categoriesData && Array.isArray(categoriesData) && categoriesData.length > 0) {
           const mergedCategories: Category[] = [];
-          
-          // Add all INITIAL_CATEGORIES first (preserving order)
           INITIAL_CATEGORIES.forEach(defaultCat => {
-            const existing = parsed.find((c: Category) => c.id === defaultCat.id);
+            const existing = categoriesData.find((c: Category) => c.id === defaultCat.id);
             if (existing) {
-              // Update icon and color from default if it's a default category (to keep icons/colors updated)
               mergedCategories.push({
                 ...existing,
                 iconName: defaultCat.iconName,
                 color: defaultCat.color
               });
             } else {
-              // Add default category if missing
               mergedCategories.push(defaultCat);
             }
           });
-          
-          // Add any custom categories that don't exist in INITIAL_CATEGORIES
-          parsed.forEach((cat: Category) => {
+          categoriesData.forEach((cat: Category) => {
             if (!INITIAL_CATEGORIES.some(dc => dc.id === cat.id)) {
               mergedCategories.push(cat);
             }
           });
-          
           setCategories(mergedCategories);
+        } else {
+          setCategories(INITIAL_CATEGORIES);
         }
-      }
 
-      const savedWorkTopics = localStorage.getItem('life26-work-topics');
-      if (savedWorkTopics) {
-        const parsed = JSON.parse(savedWorkTopics);
-        if (Array.isArray(parsed)) {
-          setWorkTopics(parsed);
+        if (topicsData && Array.isArray(topicsData)) {
+          setWorkTopics(topicsData);
         }
-      }
 
-      const savedWorkSubjects = localStorage.getItem('life26-work-subjects');
-      if (savedWorkSubjects) {
-        const parsed = JSON.parse(savedWorkSubjects);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setWorkSubjects(parsed);
+        if (subjectsData && Array.isArray(subjectsData) && subjectsData.length > 0) {
+          setWorkSubjects(subjectsData);
         }
-      }
 
-      const savedDailyNotes = localStorage.getItem('life26-daily-notes');
-      if (savedDailyNotes) {
-        const parsed = JSON.parse(savedDailyNotes);
-        if (typeof parsed === 'object' && parsed !== null) {
-          const notes = Object.values(parsed).find((n: any) => n.dateString === dateString) as DailyNotes | undefined;
-          if (notes) {
-            setDailyNotes(notes);
-          }
+        if (pomodoroData) {
+          setPomodoroSettings(pomodoroData);
         }
-      }
 
-      const savedStickyNotes = localStorage.getItem('life26-sticky-notes');
-      if (savedStickyNotes) {
-        const parsed = JSON.parse(savedStickyNotes);
-        if (parsed && typeof parsed === 'object') {
-          setStickyNotes(parsed);
+        const dailyNotesData = await api.getDailyNotes(dateString);
+        if (dailyNotesData) {
+          setDailyNotes(dailyNotesData);
         }
-      }
 
-      const savedPomodoro = localStorage.getItem('life26-pomodoro-settings');
-      if (savedPomodoro) {
-        const parsed = JSON.parse(savedPomodoro);
-        if (parsed && typeof parsed === 'object') {
-          setPomodoroSettings(parsed);
+        const stickyNotesData = await api.getStickyNotes();
+        if (stickyNotesData) {
+          setStickyNotes(stickyNotesData);
         }
+      } catch (error) {
+        console.error('Error loading data:', error);
       }
-    } catch (error) {
-      console.error('Error loading data:', error);
-    }
-  }, []);
+    };
+
+    loadData();
+  }, [dateString]);
 
   // Sync events from other pages
   useEffect(() => {
-    const handleSync = () => {
-      const savedEvents = localStorage.getItem('life26-events');
-      if (savedEvents) {
-        setEvents(JSON.parse(savedEvents));
+    const handleSync = async () => {
+      try {
+        const eventsData = await api.getEvents();
+        if (eventsData && Array.isArray(eventsData)) {
+          setEvents(eventsData);
+        }
+      } catch (error) {
+        console.error('Sync failed', error);
       }
     };
-    window.addEventListener('storage', handleSync);
     window.addEventListener('life26-update' as any, handleSync);
     return () => {
-      window.removeEventListener('storage', handleSync);
       window.removeEventListener('life26-update' as any, handleSync);
     };
   }, []);
@@ -208,40 +188,70 @@ export default function ComputerPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const savedDailyNotes = localStorage.getItem('life26-daily-notes');
-    if (savedDailyNotes) {
+    const loadDailyData = async () => {
       try {
-        const parsed = JSON.parse(savedDailyNotes);
-        if (typeof parsed === 'object' && parsed !== null) {
-          const notes = Object.values(parsed).find((n: any) => n.dateString === dateString) as DailyNotes | undefined;
-          setDailyNotes(notes || null);
+        const dailyNotesData = await api.getDailyNotes(dateString);
+        if (dailyNotesData) {
+          setDailyNotes(dailyNotesData);
         }
       } catch (error) {
         console.error('Error loading daily notes:', error);
       }
-    }
+    };
+
+    loadDailyData();
   }, [dateString]);
 
   // Save work topics
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    localStorage.setItem('life26-work-topics', JSON.stringify(workTopics));
-    // Notify other pages
-    window.dispatchEvent(new CustomEvent('life26-update', { 
-      detail: { type: 'workTopicsUpdated', source: 'computer-page' } 
-    }));
+    
+    const saveTopics = async () => {
+      try {
+        for (const topic of workTopics) {
+          await api.saveWorkTopic(topic);
+        }
+        window.dispatchEvent(new CustomEvent('life26-update', { 
+          detail: { type: 'workTopicsUpdated', source: 'computer-page' } 
+        }));
+      } catch (error) {
+        console.error('Failed to save work topics', error);
+      }
+    };
+    
+    saveTopics();
   }, [workTopics]);
 
   // Save work subjects
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    localStorage.setItem('life26-work-subjects', JSON.stringify(workSubjects));
+    
+    const saveSubjects = async () => {
+      try {
+        for (const subject of workSubjects) {
+          await api.saveWorkSubject(subject);
+        }
+      } catch (error) {
+        console.error('Failed to save work subjects', error);
+      }
+    };
+    
+    saveSubjects();
   }, [workSubjects]);
 
   // Save pomodoro settings
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    localStorage.setItem('life26-pomodoro-settings', JSON.stringify(pomodoroSettings));
+    
+    const savePomodoro = async () => {
+      try {
+        await api.savePomodoroSettings(pomodoroSettings);
+      } catch (error) {
+        console.error('Failed to save pomodoro settings', error);
+      }
+    };
+    
+    savePomodoro();
   }, [pomodoroSettings]);
 
   // Listen for events changes from other pages
@@ -299,32 +309,35 @@ export default function ComputerPage() {
     window.addEventListener('storage', handleStorageChange);
 
     // Also listen for custom events (for same-tab updates)
-    const handleCustomEvent = (e: CustomEvent) => {
+    const handleCustomEvent = async (e: CustomEvent) => {
       if (e.detail?.type === 'events-updated') {
-        const savedEvents = localStorage.getItem('life26-events');
-        if (savedEvents) {
-          try {
-            const parsed = JSON.parse(savedEvents);
-            if (Array.isArray(parsed)) {
-              setEvents(parsed);
-            }
-          } catch (error) {
-            console.error('Error parsing events:', error);
+        try {
+          const eventsData = await api.getEvents();
+          if (eventsData && Array.isArray(eventsData)) {
+            setEvents(eventsData);
           }
+        } catch (error) {
+          console.error('Error syncing events', error);
         }
       }
       if (e.detail?.type === 'notes-updated' && !isTypingRef.current) {
-        const savedDailyNotes = localStorage.getItem('life26-daily-notes');
-        if (savedDailyNotes) {
-          try {
-            const parsed = JSON.parse(savedDailyNotes);
-            if (typeof parsed === 'object' && parsed !== null) {
-              const notes = Object.values(parsed).find((n: any) => n.dateString === dateString) as DailyNotes | undefined;
-              setDailyNotes(notes || null);
+        try {
+          const dailyNotesData = await api.getDailyNotes(dateString);
+          if (dailyNotesData) {
+            setDailyNotes(dailyNotesData);
+            if (dailyNotesRef.current) {
+              dailyNotesRef.current.value = dailyNotesData.content || '';
             }
-          } catch (error) {
-            console.error('Error parsing daily notes:', error);
           }
+          const stickyNotesData = await api.getStickyNotes();
+          if (stickyNotesData) {
+            setStickyNotes(stickyNotesData);
+            if (stickyNotesRef.current) {
+              stickyNotesRef.current.value = stickyNotesData.content || '';
+            }
+          }
+        } catch (error) {
+          console.error('Error syncing notes', error);
         }
       }
     };
@@ -602,7 +615,7 @@ export default function ComputerPage() {
   };
 
   // Save daily notes
-  const saveDailyNotes = useCallback(() => {
+  const saveDailyNotes = useCallback(async () => {
     if (typeof window === 'undefined' || isTypingRef.current) return;
     
     const content = dailyNotesRef.current?.value || '';
@@ -612,20 +625,20 @@ export default function ComputerPage() {
       content,
     };
 
-    const saved = localStorage.getItem('life26-daily-notes');
-    const allNotes = saved ? JSON.parse(saved) : {};
-    allNotes[notes.id] = notes;
-    localStorage.setItem('life26-daily-notes', JSON.stringify(allNotes));
-    setDailyNotes(notes);
-    
-    // Notify other pages
-    window.dispatchEvent(new CustomEvent('life26-update', { 
-      detail: { type: 'notes-updated', source: 'computer-page' } 
-    }));
+    try {
+      await api.saveDailyNotes(notes);
+      setDailyNotes(notes);
+      
+      window.dispatchEvent(new CustomEvent('life26-update', { 
+        detail: { type: 'notes-updated', source: 'computer-page' } 
+      }));
+    } catch (error) {
+      console.error('Failed to save daily notes', error);
+    }
   }, [dateString, dailyNotes]);
 
   // Save sticky notes
-  const saveStickyNotes = useCallback(() => {
+  const saveStickyNotes = useCallback(async () => {
     if (typeof window === 'undefined' || isTypingRef.current) return;
     
     const content = stickyNotesRef.current?.value || '';
@@ -634,13 +647,16 @@ export default function ComputerPage() {
       content,
     };
 
-    localStorage.setItem('life26-sticky-notes', JSON.stringify(notes));
-    setStickyNotes(notes);
-    
-    // Notify other pages
-    window.dispatchEvent(new CustomEvent('life26-update', { 
-      detail: { type: 'notes-updated', source: 'computer-page' } 
-    }));
+    try {
+      await api.saveStickyNotes(notes);
+      setStickyNotes(notes);
+      
+      window.dispatchEvent(new CustomEvent('life26-update', { 
+        detail: { type: 'notes-updated', source: 'computer-page' } 
+      }));
+    } catch (error) {
+      console.error('Failed to save sticky notes', error);
+    }
   }, [stickyNotes]);
 
   // Add topic

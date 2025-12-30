@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DailyMission } from "@/lib/types";
+import { api } from "@/lib/api";
 
 const MissionPage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -30,34 +31,68 @@ const MissionPage = () => {
 
   // 1. Load Data
   useEffect(() => {
-    const saved = localStorage.getItem('life26-missions');
-    if (saved) {
-      setMissions(JSON.parse(saved));
-    }
-    setIsLoaded(true);
+    const loadData = async () => {
+      try {
+        const missionsData = await api.getMissions();
+        if (missionsData && Array.isArray(missionsData)) {
+          const missionsMap: Record<string, DailyMission> = {};
+          missionsData.forEach(mission => {
+            missionsMap[mission.dateString] = mission;
+          });
+          setMissions(missionsMap);
+        }
+      } catch (error) {
+        console.error('Failed to load missions', error);
+      }
+      setIsLoaded(true);
+    };
+    
+    loadData();
   }, []);
 
   // 2. Save Data
-  const saveMission = (date: string, data: Partial<DailyMission>) => {
-    const newMissions = {
-      ...missions,
-      [date]: {
-        ...(missions[date] || { id: date, dateString: date, mission: "" }),
-        ...data
-      }
+  const saveMission = async (date: string, data: Partial<DailyMission>) => {
+    const missionData = {
+      ...(missions[date] || { id: `mission-${date}`, dateString: date, mission: "" }),
+      ...data
     };
-    setMissions(newMissions);
-    localStorage.setItem('life26-missions', JSON.stringify(newMissions));
-    window.dispatchEvent(new CustomEvent('life26-update', { detail: { type: 'missions-updated' } }));
+    
+    try {
+      await api.saveMission(missionData);
+      
+      const newMissions = {
+        ...missions,
+        [date]: missionData
+      };
+      setMissions(newMissions);
+      
+      window.dispatchEvent(new CustomEvent('life26-update', { detail: { type: 'missions-updated' } }));
+    } catch (error) {
+      console.error('Failed to save mission', error);
+    }
   };
 
-  const resetDay = () => {
+  const resetDay = async () => {
     if (!confirm("האם לאפס את כל הנתונים של היום הנבחר?")) return;
-    const newMissions = { ...missions };
-    delete newMissions[dateString];
-    setMissions(newMissions);
-    localStorage.setItem('life26-missions', JSON.stringify(newMissions));
-    window.dispatchEvent(new CustomEvent('life26-update', { detail: { type: 'missions-updated' } }));
+    
+    try {
+      // Note: We don't have a delete endpoint for missions, so we'll just update it to empty
+      await api.saveMission({
+        id: `mission-${dateString}`,
+        dateString,
+        mission: "",
+        reflection: null,
+        score: null,
+      });
+      
+      const newMissions = { ...missions };
+      delete newMissions[dateString];
+      setMissions(newMissions);
+      
+      window.dispatchEvent(new CustomEvent('life26-update', { detail: { type: 'missions-updated' } }));
+    } catch (error) {
+      console.error('Failed to reset mission', error);
+    }
   };
 
   const currentMission = missions[dateString] || { id: dateString, dateString, mission: "" };
