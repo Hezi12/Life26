@@ -434,12 +434,13 @@ export default function HomePage() {
   return (
     <div className="h-screen overflow-hidden flex flex-col bg-black text-white font-mono selection:bg-orange-500/30 selection:text-white" dir="rtl">
       {!activeSession ? (
-        <div className="flex-1 bg-black flex items-center justify-center p-12 relative overflow-hidden">
+        <div className="flex-1 bg-black flex items-center justify-center p-4 sm:p-8 md:p-12 relative overflow-hidden">
           {/* Background subtle grid for texture */}
           <div className="absolute inset-0 bg-[radial-gradient(#ffffff03_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
           
-          <div className="max-w-5xl w-full flex flex-col gap-10 animate-in fade-in zoom-in-95 duration-1000">
-            <div className="grid grid-cols-[repeat(80,minmax(0,1fr))] grid-rows-[repeat(52,minmax(0,1fr))] grid-flow-col gap-1.5 p-4 bg-white/[0.01] border border-white/[0.02] rounded-sm relative group">
+          <div className="max-w-5xl w-full flex flex-col gap-6 sm:gap-8 md:gap-10 animate-in fade-in zoom-in-95 duration-1000">
+            {/* Life Matrix - Responsive grid for mobile */}
+            <div className="grid grid-cols-[repeat(80,minmax(0,1fr))] grid-rows-[repeat(52,minmax(0,1fr))] grid-flow-col gap-0.5 sm:gap-1 md:gap-1.5 p-2 sm:p-3 md:p-4 bg-white/[0.01] border border-white/[0.02] rounded-sm relative group overflow-auto max-h-[60vh] sm:max-h-none">
               {Array.from({ length: 4160 }).map((_, i) => {
                 const isCurrent = i === weeksExpired;
                 const isPast = i < weeksExpired;
@@ -450,7 +451,7 @@ export default function HomePage() {
                     onMouseEnter={() => setHoveredWeek(i)}
                     onMouseLeave={() => setHoveredWeek(null)}
                     className={cn(
-                      "w-1 h-1 rounded-full transition-all duration-300 cursor-crosshair hover:scale-[2.5] hover:bg-white hover:z-10",
+                      "w-0.5 h-0.5 sm:w-1 sm:h-1 rounded-full transition-all duration-300 cursor-crosshair hover:scale-[2.5] hover:bg-white hover:z-10",
                       isCurrent 
                         ? "bg-orange-500 animate-pulse scale-150 shadow-[0_0_10px_#f97316]" 
                         : isPast 
@@ -462,24 +463,24 @@ export default function HomePage() {
               })}
             </div>
             
-            <div className="flex justify-between items-end border-t border-white/[0.03] pt-6 px-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0 border-t border-white/[0.03] pt-4 sm:pt-6 px-2">
               <div className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-black text-zinc-800 uppercase tracking-[0.5em] italic">MEMENTO_MORI</span>
-                <div className="flex items-center gap-4">
-                  <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">
+                <span className="text-[9px] sm:text-[10px] font-black text-zinc-800 uppercase tracking-[0.5em] italic">MEMENTO_MORI</span>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                  <span className="text-[8px] sm:text-[9px] text-zinc-500 font-bold uppercase tracking-widest">
                     {weeksExpired} / 4160 WEEKS EXPIRED (80 YEARS)
                   </span>
                   {hoveredWeek !== null && (
                     <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-300">
                       <div className="w-1 h-1 bg-orange-500 rounded-full animate-pulse" />
-                      <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">
+                      <span className="text-[9px] sm:text-[10px] font-black text-orange-500 uppercase tracking-widest">
                         ESTIMATED AGE: {(hoveredWeek / 52).toFixed(1)} YRS
                       </span>
                     </div>
                   )}
                 </div>
               </div>
-              <div className="text-[10px] font-black text-orange-500/30 uppercase tracking-[0.2em] animate-pulse italic">
+              <div className="text-[9px] sm:text-[10px] font-black text-orange-500/30 uppercase tracking-[0.2em] animate-pulse italic">
                 Life_Matrix_Active
               </div>
             </div>
@@ -487,27 +488,27 @@ export default function HomePage() {
         </div>
       ) : (
         <>
-          {/* Header - Restoration of the correct cooler design */}
-          <header className="flex items-center justify-between p-6 border-b border-zinc-900 bg-black/50 backdrop-blur-md shrink-0">
-            <div className="flex items-center gap-8">
-              <h1 className="text-xl font-black italic tracking-[0.2em] text-white">OPERATIONAL HUD</h1>
+          {/* Header - Mobile responsive */}
+          <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-4 sm:p-6 border-b border-zinc-900 bg-black/50 backdrop-blur-md shrink-0">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 w-full sm:w-auto">
+              <h1 className="text-lg sm:text-xl font-black italic tracking-[0.2em] text-white">OPERATIONAL HUD</h1>
               
-              {/* Navigation Controls */}
-              <div className="flex items-center gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-sm">
+              {/* Navigation Controls - Mobile optimized */}
+              <div className="flex items-center gap-2 sm:gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-sm w-full sm:w-auto">
                 <button
                   onClick={() => setCurrentTime(new Date(currentTime.setDate(currentTime.getDate() - 1)))}
                   className="p-1 text-zinc-500 hover:text-white transition-colors"
                 >
-                  <ChevronRight size={16} />
+                  <ChevronRight size={14} className="sm:w-4 sm:h-4" />
                 </button>
                 <button
                   onClick={() => setCurrentTime(new Date())}
-                  className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 hover:bg-white/10 transition-colors"
+                  className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 hover:bg-white/10 transition-colors"
                 >
                   היום
                 </button>
                 <div className="w-px h-4 bg-zinc-800 mx-1" />
-                <div className="text-xs font-bold text-orange-500 px-2 min-w-[140px] text-center">
+                <div className="text-[10px] sm:text-xs font-bold text-orange-500 px-2 min-w-[120px] sm:min-w-[140px] text-center">
                   {isLoaded ? new Intl.DateTimeFormat('he-IL', { weekday: 'long', day: 'numeric', month: 'short' }).format(currentTime) : "INITIALIZING..."}
                 </div>
                 <div className="w-px h-4 bg-zinc-800 mx-1" />
@@ -515,67 +516,67 @@ export default function HomePage() {
                   onClick={() => setCurrentTime(new Date(currentTime.setDate(currentTime.getDate() + 1)))}
                   className="p-1 text-zinc-500 hover:text-white transition-colors"
                 >
-                  <ChevronLeft size={16} />
+                  <ChevronLeft size={14} className="sm:w-4 sm:h-4" />
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2.5 px-3 py-1.5 bg-zinc-900/30 border border-zinc-800 rounded-sm">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)] animate-pulse" />
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500">System_Online</span>
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-2 sm:gap-2.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-zinc-900/30 border border-zinc-800 rounded-sm">
+                <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)] animate-pulse" />
+                <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500">System_Online</span>
               </div>
             </div>
           </header>
 
-          {/* Main Diagnostic Grid */}
-          <div className="flex-1 grid grid-cols-12 gap-0 overflow-hidden">
+          {/* Main Diagnostic Grid - Mobile: column, Desktop: grid */}
+          <div className="flex-1 flex flex-col md:grid md:grid-cols-12 gap-0 overflow-hidden">
             
             {/* COMMAND CENTER (Left Column, Cols 1-7) */}
-            <div className="col-span-7 border-l border-zinc-900 flex flex-col overflow-hidden relative bg-[#050505]">
+            <div className="flex-1 md:col-span-7 border-l border-zinc-900 flex flex-col overflow-hidden relative bg-[#050505]">
               {/* Background scanner effect */}
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.03)_0%,transparent_70%)] pointer-events-none" />
               
-              <div className="flex-1 flex flex-col p-10 animate-in fade-in duration-1000">
-                {/* Active Session Status */}
-                <div className="flex justify-between items-center border-b border-zinc-900 pb-5 mb-16 relative z-10">
-                  <div className="flex items-center gap-8">
-                    <div className="flex items-center gap-4">
+              <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-10 animate-in fade-in duration-1000">
+                {/* Active Session Status - Mobile responsive */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 border-b border-zinc-900 pb-4 sm:pb-5 mb-8 sm:mb-12 md:mb-16 relative z-10">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 w-full sm:w-auto">
+                    <div className="flex items-center gap-3 sm:gap-4">
                       <div className="p-2 bg-orange-500/10 border border-orange-500/20 rounded-sm text-orange-500">
-                        <Monitor size={16} strokeWidth={2.5} />
+                        <Monitor size={14} className="sm:w-4 sm:h-4" strokeWidth={2.5} />
                       </div>
                       <div className="flex flex-col">
-                        <div className="text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none mb-1">Active_Deployment</div>
-                        <div className="text-xs font-black text-white tabular-nums tracking-widest">
-                          {activeSession.startTime} <span className="mx-2 text-zinc-800">—</span> {activeSession.endTime}
+                        <div className="text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none mb-1">Active_Deployment</div>
+                        <div className="text-[10px] sm:text-xs font-black text-white tabular-nums tracking-widest">
+                          {activeSession.startTime} <span className="mx-1 sm:mx-2 text-zinc-800">—</span> {activeSession.endTime}
                         </div>
                       </div>
                     </div>
 
-                    <div className="h-8 w-px bg-zinc-900" />
+                    <div className="hidden sm:block h-8 w-px bg-zinc-900" />
 
-                    {/* Current Topic Display & Config */}
-                    <div className="flex items-center gap-6">
+                    {/* Current Topic Display & Config - Mobile optimized */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 w-full sm:w-auto">
                       {currentTopic ? (
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
                           <div className="flex flex-col">
-                            <div className="text-[8px] font-black text-zinc-600 uppercase tracking-widest leading-none mb-1">Current_Topic</div>
-                            <div className="text-[11px] font-black text-orange-500 uppercase tracking-wide">
+                            <div className="text-[7px] sm:text-[8px] font-black text-zinc-600 uppercase tracking-widest leading-none mb-1">Current_Topic</div>
+                            <div className="text-[10px] sm:text-[11px] font-black text-orange-500 uppercase tracking-wide">
                               {workSubjects.find(s => s.id === currentTopic.subjectId)?.name || 'N/A'}
                             </div>
                           </div>
                         </div>
                       ) : (
-                        <div className="text-[9px] font-black text-zinc-800 uppercase tracking-widest">No_Topic_Set</div>
+                        <div className="text-[8px] sm:text-[9px] font-black text-zinc-800 uppercase tracking-widest">No_Topic_Set</div>
                       )}
 
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3">
                         {isConfigOpen ? (
-                          <div className="flex items-center gap-3 px-3 py-1 bg-zinc-900/50 border border-zinc-800 rounded-sm animate-in fade-in slide-in-from-right-4 duration-500">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1 bg-zinc-900/50 border border-zinc-800 rounded-sm animate-in fade-in slide-in-from-right-4 duration-500 w-full sm:w-auto">
                             <select 
                               value={newTopicSubjectId}
                               onChange={(e) => setNewTopicSubjectId(e.target.value)}
-                              className="bg-transparent text-[10px] text-white font-black outline-none border-none p-0 cursor-pointer"
+                              className="bg-transparent text-[9px] sm:text-[10px] text-white font-black outline-none border-none p-0 cursor-pointer flex-1 sm:flex-none min-w-[100px]"
                             >
                               {workSubjects.map((s) => <option key={s.id} value={s.id} className="bg-black text-white">{s.name.toUpperCase()}</option>)}
                             </select>
@@ -584,34 +585,34 @@ export default function HomePage() {
                               type="time" 
                               value={newStartTime}
                               onChange={(e) => setNewStartTime(e.target.value)}
-                              className="bg-transparent text-[10px] text-white font-black outline-none border-none p-0 font-mono w-16"
+                              className="bg-transparent text-[9px] sm:text-[10px] text-white font-black outline-none border-none p-0 font-mono w-14 sm:w-16"
                             />
-                            <span className="text-[8px] text-zinc-700">TO</span>
+                            <span className="text-[7px] sm:text-[8px] text-zinc-700">TO</span>
                             <input 
                               type="time" 
                               value={newEndTime}
                               onChange={(e) => setNewEndTime(e.target.value)}
-                              className="bg-transparent text-[10px] text-white font-black outline-none border-none p-0 font-mono w-16"
+                              className="bg-transparent text-[9px] sm:text-[10px] text-white font-black outline-none border-none p-0 font-mono w-14 sm:w-16"
                             />
                             <button 
                               onClick={handleAddTopic}
                               className="p-1 bg-white text-black rounded-sm hover:bg-orange-500 hover:text-white transition-all"
                             >
-                              <Plus size={12} strokeWidth={3} />
+                              <Plus size={11} className="sm:w-3 sm:h-3" strokeWidth={3} />
                             </button>
                             <button 
                               onClick={() => setIsConfigOpen(false)}
                               className="p-1 text-zinc-600 hover:text-white"
                             >
-                              <X size={12} />
+                              <X size={11} className="sm:w-3 sm:h-3" />
                             </button>
                           </div>
                         ) : (
                           <button 
                             onClick={() => setIsConfigOpen(true)}
-                            className="flex items-center gap-2 px-3 py-1.5 border border-zinc-800 text-zinc-600 hover:text-white hover:border-zinc-600 transition-all rounded-sm text-[9px] font-black uppercase tracking-widest"
+                            className="flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 border border-zinc-800 text-zinc-600 hover:text-white hover:border-zinc-600 transition-all rounded-sm text-[8px] sm:text-[9px] font-black uppercase tracking-widest"
                           >
-                            <Settings size={12} />
+                            <Settings size={11} className="sm:w-3 sm:h-3" />
                             Config_Topic
                           </button>
                         )}
@@ -619,8 +620,8 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-6">
-                    <Activity size={14} className="text-orange-500 animate-pulse" />
+                  <div className="flex items-center gap-4 sm:gap-6">
+                    <Activity size={12} className="sm:w-3.5 sm:h-3.5 text-orange-500 animate-pulse" />
                   </div>
                 </div>
 
@@ -698,27 +699,27 @@ export default function HomePage() {
                         </div>
                       </div>
 
-                      {/* UPCOMING SEQUENCE BOXES */}
-                      <div className="flex-[3] grid grid-cols-3 gap-3">
+                      {/* UPCOMING SEQUENCE BOXES - Mobile: column, Desktop: grid */}
+                      <div className="flex-[3] grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                         {timelineData.upcoming.map((event, i) => {
                           const category = categories.find(c => c.id === event.categoryId);
                           return (
-                            <div key={event.id} className="relative group/item">
-                              <div className="h-full bg-zinc-950/60 border border-zinc-900 hover:border-zinc-800 transition-all rounded-sm p-4 relative overflow-hidden group/box shadow-lg">
+                            <div key={event.id} className="relative group/item min-h-[80px] sm:min-h-0">
+                              <div className="h-full bg-zinc-950/60 border border-zinc-900 hover:border-zinc-800 transition-all rounded-sm p-3 sm:p-4 relative overflow-hidden group/box shadow-lg">
                                 <div 
                                   className="absolute bottom-0 left-0 right-0 h-0.5 opacity-20 group-hover/item:opacity-100 transition-all" 
                                   style={{ backgroundColor: category?.color || '#333' }} 
                                 />
                                 
                                 <div className="flex flex-col h-full justify-between relative z-10">
-                                  <div className="text-[9px] font-mono text-zinc-600 font-black flex items-center gap-2">
+                                  <div className="text-[8px] sm:text-[9px] font-mono text-zinc-600 font-black flex items-center gap-2">
                                     {event.time}
                                     <div className="w-1 h-1 rounded-full bg-zinc-800" />
                                   </div>
-                                  <div className="text-[14px] font-black text-zinc-300 uppercase leading-tight tracking-tight group-hover/item:text-white transition-colors">
+                                  <div className="text-xs sm:text-[14px] font-black text-zinc-300 uppercase leading-tight tracking-tight group-hover/item:text-white transition-colors">
                                     {event.title.split(':')[0]}
                                   </div>
-                                  <div className="text-[7px] font-black text-zinc-700 uppercase tracking-[0.2em]">{category?.name}</div>
+                                  <div className="text-[6px] sm:text-[7px] font-black text-zinc-700 uppercase tracking-[0.2em]">{category?.name}</div>
                                 </div>
 
                                 <div 
@@ -730,8 +731,8 @@ export default function HomePage() {
                           );
                         })}
                         {timelineData.upcoming.length === 0 && (
-                          <div className="col-span-3 flex items-center justify-center border border-dashed border-zinc-900/50 rounded-sm bg-black/20">
-                            <span className="text-[9px] text-zinc-800 uppercase tracking-[0.4em] font-black italic">Sequence_Complete</span>
+                          <div className="col-span-1 sm:col-span-3 flex items-center justify-center border border-dashed border-zinc-900/50 rounded-sm bg-black/20 min-h-[80px] sm:min-h-0">
+                            <span className="text-[8px] sm:text-[9px] text-zinc-800 uppercase tracking-[0.4em] font-black italic">Sequence_Complete</span>
                           </div>
                         )}
                       </div>
@@ -741,11 +742,11 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* LOGGING & BUFFER (Right Column, Cols 8-12) */}
-            <div className="col-span-5 flex flex-col overflow-hidden bg-black border-r border-zinc-900">
+            {/* LOGGING & BUFFER (Right Column, Cols 8-12) - Mobile: full width below */}
+            <div className="md:col-span-5 flex flex-col overflow-hidden bg-black border-r border-zinc-900 border-t md:border-t-0">
               
               {/* Daily Protocol Panel */}
-              <div className="flex-1 flex flex-col p-8 border-b border-zinc-900 overflow-hidden relative">
+              <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 border-b border-zinc-900 overflow-hidden relative">
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:30px_30px] pointer-events-none" />
                 
                 <div className="flex items-center justify-between mb-6 relative z-10">
@@ -767,7 +768,7 @@ export default function HomePage() {
                         isTypingRef.current = false;
                         saveDailyNotes();
                       }}
-                      className="w-full h-full bg-transparent text-zinc-300 text-[15px] font-mono leading-[1.8] p-0 resize-none outline-none placeholder:text-zinc-900 font-medium scrollbar-hide"
+                      className="w-full h-full bg-transparent text-zinc-300 text-sm sm:text-[15px] font-mono leading-[1.8] p-0 resize-none outline-none placeholder:text-zinc-900 font-medium scrollbar-hide"
                       placeholder="Initialize operational log stream..."
                     />
                   </div>
@@ -775,7 +776,7 @@ export default function HomePage() {
               </div>
 
               {/* Static Buffer Panel */}
-              <div className="h-[35%] flex flex-col p-8 overflow-hidden bg-[#030303] relative">
+              <div className="h-[35%] min-h-[200px] sm:min-h-[250px] md:h-[35%] flex flex-col p-4 sm:p-6 md:p-8 overflow-hidden bg-[#030303] relative">
                 <div className="flex items-center justify-between mb-4 relative z-10">
                   <div className="flex items-center gap-3">
                     <div className="w-1 h-4 bg-zinc-800" />
@@ -794,7 +795,7 @@ export default function HomePage() {
                       isTypingRef.current = false;
                       saveStickyNotes();
                     }}
-                    className="w-full h-full bg-transparent text-zinc-500 text-[13px] font-mono leading-relaxed p-0 resize-none outline-none placeholder:text-zinc-900 scrollbar-hide"
+                    className="w-full h-full bg-transparent text-zinc-500 text-xs sm:text-[13px] font-mono leading-relaxed p-0 resize-none outline-none placeholder:text-zinc-900 scrollbar-hide"
                     placeholder="Persistent data encryption area..."
                   />
                   <div className="flex justify-end mt-2 opacity-30 group-focus-within/buffer:opacity-100 transition-opacity">
