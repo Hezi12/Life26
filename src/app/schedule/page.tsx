@@ -280,25 +280,7 @@ export default function SchedulePage() {
         }
       } catch (error) {
         console.error('Error loading from API:', error);
-        // Fallback to localStorage if API fails
-        try {
-          const savedEvents = localStorage.getItem('life26-events');
-          if (savedEvents) {
-            const parsed = JSON.parse(savedEvents);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setEvents(parsed);
-            }
-          }
-          const savedCategories = localStorage.getItem('life26-categories');
-          if (savedCategories) {
-            const parsed = JSON.parse(savedCategories);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setCategories(parsed);
-            }
-          }
-        } catch (fallbackError) {
-          console.error('Fallback failed', fallbackError);
-        }
+        // No fallback - API is required
       } finally {
         setIsLoaded(true);
       }
@@ -407,8 +389,7 @@ export default function SchedulePage() {
         }));
       } catch (error) {
         console.error('Failed to save events to API', error);
-        // Fallback to localStorage
-        localStorage.setItem('life26-events', JSON.stringify(events));
+        // No fallback - API is required
       }
     };
     
@@ -426,8 +407,7 @@ export default function SchedulePage() {
         }
       } catch (error) {
         console.error('Failed to save categories to API', error);
-        // Fallback to localStorage
-        localStorage.setItem('life26-categories', JSON.stringify(categories));
+        // No fallback - API is required
       }
     };
     

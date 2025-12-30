@@ -127,15 +127,7 @@ export default function HomePage() {
 
       } catch (e) {
         console.error("Failed to load dashboard data", e);
-        // Fallback to localStorage if API fails
-        try {
-          const savedEvents = localStorage.getItem('life26-events');
-          if (savedEvents) setEvents(JSON.parse(savedEvents));
-          const savedCategories = localStorage.getItem('life26-categories');
-          if (savedCategories) setCategories(JSON.parse(savedCategories));
-        } catch (fallbackError) {
-          console.error("Fallback failed", fallbackError);
-        }
+        // No fallback - API is required
       }
       
       setIsLoaded(true);
