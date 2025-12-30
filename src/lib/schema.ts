@@ -90,3 +90,16 @@ export const dailyMissions = pgTable('daily_missions', {
   score: integer('score'), // 0 | 1 | 2 | 3
 });
 
+// Parser Texts table (for raw parser input text)
+export const parserTexts = pgTable('parser_texts', {
+  id: text('id').primaryKey(),
+  dateString: text('date_string').notNull(),
+  content: text('content').default(''),
+});
+
+// Photos table (for daily photos)
+export const photos = pgTable('photos', {
+  id: text('id').primaryKey(),
+  dateString: text('date_string').notNull(),
+  photoData: text('photo_data').notNull(), // base64 encoded image
+});

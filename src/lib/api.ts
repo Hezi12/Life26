@@ -119,5 +119,100 @@ export const api = {
       body: JSON.stringify(settings),
     });
   },
+
+  // Parser Texts
+  async getParserTexts(dateString: string): Promise<any | null> {
+    const res = await fetch(`/api/parser-texts?dateString=${dateString}`);
+    if (!res.ok) throw new Error('Failed to fetch parser texts');
+    return res.json();
+  },
+
+  async saveParserTexts(parserText: any): Promise<void> {
+    await fetch('/api/parser-texts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(parserText),
+    });
+  },
+
+  // Photos
+  async getPhotos(dateString: string): Promise<any | null> {
+    const res = await fetch(`/api/photos?dateString=${dateString}`);
+    if (!res.ok) throw new Error('Failed to fetch photos');
+    return res.json();
+  },
+
+  async savePhotos(photo: any): Promise<void> {
+    await fetch('/api/photos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(photo),
+    });
+  },
+
+  async deletePhotos(dateString: string): Promise<void> {
+    await fetch(`/api/photos?dateString=${dateString}`, { method: 'DELETE' });
+  },
+
+  // Habits
+  async getHabits(): Promise<any[]> {
+    const res = await fetch('/api/habits');
+    if (!res.ok) throw new Error('Failed to fetch habits');
+    return res.json();
+  },
+
+  async saveHabit(habit: any): Promise<void> {
+    await fetch('/api/habits', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(habit),
+    });
+  },
+
+  async deleteHabit(id: string): Promise<void> {
+    await fetch(`/api/habits?id=${id}`, { method: 'DELETE' });
+  },
+
+  // Habit Logs
+  async getHabitLogs(habitId?: string, dateString?: string): Promise<any[]> {
+    const params = new URLSearchParams();
+    if (habitId) params.append('habitId', habitId);
+    if (dateString) params.append('dateString', dateString);
+    const url = `/api/habit-logs${params.toString() ? '?' + params.toString() : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch habit logs');
+    return res.json();
+  },
+
+  async saveHabitLog(log: any): Promise<void> {
+    await fetch('/api/habit-logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(log),
+    });
+  },
+
+  // Missions
+  async getMissions(dateString?: string): Promise<any[]> {
+    const url = dateString ? `/api/missions?dateString=${dateString}` : '/api/missions';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch missions');
+    const result = await res.json();
+    return Array.isArray(result) ? result : (result ? [result] : []);
+  },
+
+  async getMission(dateString: string): Promise<any | null> {
+    const res = await fetch(`/api/missions?dateString=${dateString}`);
+    if (!res.ok) throw new Error('Failed to fetch mission');
+    return res.json();
+  },
+
+  async saveMission(mission: any): Promise<void> {
+    await fetch('/api/missions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(mission),
+    });
+  },
 };
 

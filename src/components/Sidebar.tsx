@@ -44,22 +44,11 @@ const Sidebar = () => {
         const todayEventsData = allEvents.filter(e => e.dateString === dateString);
         setTodayEvents(todayEventsData);
         
-        const savedTexts = localStorage.getItem('life26-parser-texts');
-        const texts = savedTexts ? JSON.parse(savedTexts) : {};
-        setTodayText(texts[dateString] || "");
+        const parserTextData = await api.getParserTexts(dateString);
+        setTodayText(parserTextData?.content || "");
       } catch (error) {
         console.error('Failed to load data', error);
-        // Fallback to localStorage
-        const savedCategories = localStorage.getItem('life26-categories');
-        if (savedCategories) {
-          setCategories(JSON.parse(savedCategories));
-        }
-        const savedEvents = localStorage.getItem('life26-events');
-        const allEvents: Event[] = savedEvents ? JSON.parse(savedEvents) : [];
-        setTodayEvents(allEvents.filter(e => e.dateString === dateString));
-        const savedTexts = localStorage.getItem('life26-parser-texts');
-        const texts = savedTexts ? JSON.parse(savedTexts) : {};
-        setTodayText(texts[dateString] || "");
+        // No fallback - API is required
       }
     };
     
@@ -77,9 +66,8 @@ const Sidebar = () => {
       const allEvents = await api.getEvents();
       const todayEventsData = allEvents.filter(e => e.dateString === dateString);
       
-      const savedTexts = localStorage.getItem('life26-parser-texts');
-      const texts = savedTexts ? JSON.parse(savedTexts) : {};
-      const todayTextData = texts[dateString] || "";
+      const parserTextData = await api.getParserTexts(dateString);
+      const todayTextData = parserTextData?.content || "";
       
       setTodayEvents(todayEventsData);
       setTodayText(todayTextData);
@@ -87,19 +75,7 @@ const Sidebar = () => {
       return { events: todayEventsData, text: todayTextData };
     } catch (error) {
       console.error('Failed to load events', error);
-      // Fallback to localStorage
-      const savedEvents = localStorage.getItem('life26-events');
-      const allEvents: Event[] = savedEvents ? JSON.parse(savedEvents) : [];
-      const todayEventsData = allEvents.filter(e => e.dateString === dateString);
-      
-      const savedTexts = localStorage.getItem('life26-parser-texts');
-      const texts = savedTexts ? JSON.parse(savedTexts) : {};
-      const todayTextData = texts[dateString] || "";
-      
-      setTodayEvents(todayEventsData);
-      setTodayText(todayTextData);
-      
-      return { events: todayEventsData, text: todayTextData };
+      return { events: [], text: "" };
     }
   };
 
@@ -117,11 +93,16 @@ const Sidebar = () => {
         await api.saveEvent(event);
       }
       
-      // Save parser text to localStorage (still local for now)
-      const savedTexts = localStorage.getItem('life26-parser-texts');
-      const texts = savedTexts ? JSON.parse(savedTexts) : {};
-      texts[dateString] = rawText;
-      localStorage.setItem('life26-parser-texts', JSON.stringify(texts));
+      // Save parser text to API
+      try {
+        await api.saveParserTexts({
+          id: `parser-${dateString}`,
+          dateString,
+          content: rawText,
+        });
+      } catch (error) {
+        console.error('Failed to save parser text', error);
+      }
       
       setIsParserOpen(false);
       
@@ -135,22 +116,7 @@ const Sidebar = () => {
       }));
     } catch (error) {
       console.error('Failed to save events', error);
-      // Fallback to localStorage
-      const savedEvents = localStorage.getItem('life26-events');
-      let allEvents: Event[] = savedEvents ? JSON.parse(savedEvents) : [];
-      allEvents = allEvents.filter(e => e.dateString !== dateString);
-      allEvents = [...allEvents, ...newEvents];
-      localStorage.setItem('life26-events', JSON.stringify(allEvents));
-      
-      const savedTexts = localStorage.getItem('life26-parser-texts');
-      const texts = savedTexts ? JSON.parse(savedTexts) : {};
-      texts[dateString] = rawText;
-      localStorage.setItem('life26-parser-texts', JSON.stringify(texts));
-      
-      setIsParserOpen(false);
-      window.dispatchEvent(new CustomEvent('life26-update', { 
-        detail: { type: 'eventsUpdated', source: 'sidebar' } 
-      }));
+      // No fallback - API is required
     }
   };
 

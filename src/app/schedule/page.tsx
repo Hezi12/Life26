@@ -268,25 +268,15 @@ export default function SchedulePage() {
           setCategories(INITIAL_CATEGORIES);
         }
         
-        // Load parser texts and photos from localStorage (these are still local for now)
-        const savedTexts = localStorage.getItem('life26-parser-texts');
-        if (savedTexts) {
-          const parsed = JSON.parse(savedTexts);
-          if (parsed && typeof parsed === 'object') {
-            setDailyParserTexts(parsed);
-          }
+        // Load parser texts and photos from API
+        const parserTextData = await api.getParserTexts(dateString);
+        if (parserTextData) {
+          setDailyParserTexts(prev => ({ ...prev, [dateString]: parserTextData.content || '' }));
         }
         
-        const savedPhotos = localStorage.getItem('life26-photos');
-        if (savedPhotos) {
-          try {
-            const parsed = JSON.parse(savedPhotos);
-            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-              setDailyPhotos(parsed);
-            }
-          } catch (error) {
-            console.error('Error parsing saved photos:', error);
-          }
+        const photoData = await api.getPhotos(dateString);
+        if (photoData) {
+          setDailyPhotos(prev => ({ ...prev, [dateString]: photoData.photoData }));
         }
       } catch (error) {
         console.error('Error loading from API:', error);
@@ -325,9 +315,9 @@ export default function SchedulePage() {
         if (eventsData && Array.isArray(eventsData)) {
           setEvents(eventsData);
         }
-        const savedTexts = localStorage.getItem('life26-parser-texts');
-        if (savedTexts) {
-          setDailyParserTexts(JSON.parse(savedTexts));
+        const parserTextData = await api.getParserTexts(dateString);
+        if (parserTextData) {
+          setDailyParserTexts(prev => ({ ...prev, [dateString]: parserTextData.content || '' }));
         }
       } catch (error) {
         console.error('Sync failed', error);
@@ -339,7 +329,7 @@ export default function SchedulePage() {
     return () => {
       window.removeEventListener('life26-update' as any, handleSync);
     };
-  }, []);
+  }, [dateString]);
 
   const dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
 
@@ -389,12 +379,17 @@ export default function SchedulePage() {
     }
   };
 
-  const handlePhotoDelete = () => {
-    setDailyPhotos(prev => {
-      const newPhotos = { ...prev };
-      delete newPhotos[dateString];
-      return newPhotos;
-    });
+  const handlePhotoDelete = async () => {
+    try {
+      await api.deletePhotos(dateString);
+      setDailyPhotos(prev => {
+        const newPhotos = { ...prev };
+        delete newPhotos[dateString];
+        return newPhotos;
+      });
+    } catch (error) {
+      console.error('Failed to delete photo', error);
+    }
   };
 
   useEffect(() => {
@@ -441,33 +436,44 @@ export default function SchedulePage() {
 
   useEffect(() => {
     if (!isLoaded || typeof window === 'undefined') return;
-    localStorage.setItem('life26-parser-texts', JSON.stringify(dailyParserTexts));
+    
+    // Save parser texts to API
+    const saveParserTexts = async () => {
+      try {
+        for (const [dateStr, content] of Object.entries(dailyParserTexts)) {
+          await api.saveParserTexts({
+            id: `parser-${dateStr}`,
+            dateString: dateStr,
+            content: content as string,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to save parser texts to API', error);
+      }
+    };
+    
+    saveParserTexts();
   }, [dailyParserTexts, isLoaded]);
 
   useEffect(() => {
     if (!isLoaded || typeof window === 'undefined') return;
-    try {
-      const photosString = JSON.stringify(dailyPhotos);
-      if (photosString.length > 4 * 1024 * 1024) {
-        const entries = Object.entries(dailyPhotos);
-        const sorted = entries.sort((a, b) => b[0].localeCompare(a[0]));
-        const recent = sorted.slice(0, 10);
-        const recentPhotos = Object.fromEntries(recent);
-        localStorage.setItem('life26-photos', JSON.stringify(recentPhotos));
-      } else {
-        localStorage.setItem('life26-photos', photosString);
+    
+    // Save photos to API
+    const savePhotos = async () => {
+      try {
+        for (const [dateStr, photoData] of Object.entries(dailyPhotos)) {
+          await api.savePhotos({
+            id: `photo-${dateStr}`,
+            dateString: dateStr,
+            photoData: photoData as string,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to save photos to API', error);
       }
-    } catch (error: any) {
-      if (error.name === 'QuotaExceededError') {
-        const entries = Object.entries(dailyPhotos);
-        const sorted = entries.sort((a, b) => b[0].localeCompare(a[0]));
-        const recent = sorted.slice(0, 5);
-        const recentPhotos = Object.fromEntries(recent);
-        try {
-          localStorage.setItem('life26-photos', JSON.stringify(recentPhotos));
-        } catch (e) {}
-      }
-    }
+    };
+    
+    savePhotos();
   }, [dailyPhotos, isLoaded]);
 
   const dailyEvents = useMemo(() => {
@@ -873,9 +879,21 @@ export default function SchedulePage() {
       {isCategoryModalOpen && <CategoryModal categories={categories} onClose={() => setIsCategoryModalOpen(false)} onSave={setCategories} />}
       {isParserOpen && (
         <ParserModal dateString={dateString} categories={categories} existingEvents={dailyEvents} initialText={dailyParserTexts[dateString] || ""} 
-          onClose={() => setIsParserOpen(false)} onSave={(newEvents: Event[], inputText: string) => {
+          onClose={() => setIsParserOpen(false)} onSave={async (newEvents: Event[], inputText: string) => {
             setEvents(prev => [...prev.filter(e => e.dateString !== dateString), ...newEvents]);
             setDailyParserTexts(prev => ({...prev, [dateString]: inputText}));
+            
+            // Save parser text to API
+            try {
+              await api.saveParserTexts({
+                id: `parser-${dateString}`,
+                dateString,
+                content: inputText,
+              });
+            } catch (error) {
+              console.error('Failed to save parser text', error);
+            }
+            
             setIsParserOpen(false);
           }}
         />
