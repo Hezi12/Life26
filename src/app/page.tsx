@@ -186,6 +186,9 @@ export default function HomePage() {
 
   const activeSession = useMemo(() => {
     if (!isLoaded) return null;
+    
+    // Disable session view on mobile
+    if (typeof window !== 'undefined' && window.innerWidth < 768) return null;
 
     const computerEvents = dailyEvents.filter(event => {
       const category = categories.find(c => c.id === event.categoryId);
@@ -231,6 +234,9 @@ export default function HomePage() {
   // Pomodoro Sound Logic (Global Tracker)
   useEffect(() => {
     if (!isLoaded || !pomodoroSettings.soundsEnabled) return;
+    
+    // Disable sounds on mobile
+    if (typeof window !== 'undefined' && window.innerWidth < 768) return;
 
     const nowMins = currentTime.getHours() * 60 + currentTime.getMinutes();
     const nowSecs = currentTime.getSeconds();
@@ -432,7 +438,7 @@ export default function HomePage() {
   }, [currentTime, birthDate]);
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-black text-white font-mono selection:bg-orange-500/30 selection:text-white" dir="rtl">
+    <div className="h-screen overflow-hidden flex flex-col bg-black text-white font-mono selection:bg-orange-500/30 selection:text-white pt-safe" dir="rtl">
       {!activeSession ? (
         <div className="flex-1 bg-black flex items-center justify-center p-4 sm:p-8 md:p-12 relative overflow-hidden">
           {/* Background subtle grid for texture */}
@@ -440,7 +446,7 @@ export default function HomePage() {
           
           <div className="max-w-5xl w-full flex flex-col gap-6 sm:gap-8 md:gap-10 animate-in fade-in zoom-in-95 duration-1000">
             {/* Life Matrix - Responsive grid for mobile */}
-            <div className="grid grid-cols-[repeat(80,minmax(0,1fr))] grid-rows-[repeat(52,minmax(0,1fr))] grid-flow-col gap-0.5 sm:gap-1 md:gap-1.5 p-2 sm:p-3 md:p-4 bg-white/[0.01] border border-white/[0.02] rounded-sm relative group overflow-auto max-h-[60vh] sm:max-h-none">
+            <div className="grid grid-cols-[repeat(40,minmax(0,1fr))] md:grid-cols-[repeat(80,minmax(0,1fr))] grid-rows-[repeat(104,minmax(0,1fr))] md:grid-rows-[repeat(52,minmax(0,1fr))] grid-flow-col gap-1 md:gap-1.5 p-4 md:p-4 bg-white/[0.01] border border-white/[0.02] rounded-2xl md:rounded-sm relative group overflow-auto max-h-[70vh] md:max-h-none">
               {Array.from({ length: 4160 }).map((_, i) => {
                 const isCurrent = i === weeksExpired;
                 const isPast = i < weeksExpired;
@@ -451,7 +457,7 @@ export default function HomePage() {
                     onMouseEnter={() => setHoveredWeek(i)}
                     onMouseLeave={() => setHoveredWeek(null)}
                     className={cn(
-                      "w-0.5 h-0.5 sm:w-1 sm:h-1 rounded-full transition-all duration-300 cursor-crosshair hover:scale-[2.5] hover:bg-white hover:z-10",
+                      "w-1 h-1 md:w-1 md:h-1 rounded-full transition-all duration-300 cursor-crosshair hover:scale-[2.5] hover:bg-white hover:z-10",
                       isCurrent 
                         ? "bg-orange-500 animate-pulse scale-150 shadow-[0_0_10px_#f97316]" 
                         : isPast 
@@ -489,12 +495,12 @@ export default function HomePage() {
       ) : (
         <>
           {/* Header - Mobile responsive */}
-          <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-4 sm:p-6 border-b border-zinc-900 bg-black/50 backdrop-blur-md shrink-0">
+          <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-4 pt-[calc(1rem+env(safe-area-inset-top))] sm:p-6 border-b border-zinc-900 bg-black/50 backdrop-blur-md shrink-0">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 w-full sm:w-auto">
               <h1 className="text-lg sm:text-xl font-black italic tracking-[0.2em] text-white">OPERATIONAL HUD</h1>
               
               {/* Navigation Controls - Mobile optimized */}
-              <div className="flex items-center gap-2 sm:gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-sm w-full sm:w-auto">
+              <div className="flex items-center gap-2 sm:gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-lg w-full sm:w-auto">
                 <button
                   onClick={() => setCurrentTime(new Date(currentTime.setDate(currentTime.getDate() - 1)))}
                   className="p-1 text-zinc-500 hover:text-white transition-colors"
@@ -503,7 +509,7 @@ export default function HomePage() {
                 </button>
                 <button
                   onClick={() => setCurrentTime(new Date())}
-                  className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 hover:bg-white/10 transition-colors"
+                  className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 hover:bg-white/10 transition-colors rounded-md"
                 >
                   היום
                 </button>
@@ -521,16 +527,16 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="flex items-center gap-2 sm:gap-2.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-zinc-900/30 border border-zinc-800 rounded-sm">
-                <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)] animate-pulse" />
-                <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500">System_Online</span>
+            <div className="hidden sm:flex items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-2 sm:gap-2.5 px-3 py-1.5 bg-zinc-900/30 border border-zinc-800 rounded-sm">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)] animate-pulse" />
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500">System_Online</span>
               </div>
             </div>
           </header>
 
           {/* Main Diagnostic Grid - Mobile: column, Desktop: grid */}
-          <div className="flex-1 flex flex-col md:grid md:grid-cols-12 gap-0 overflow-hidden">
+          <div className="flex-1 flex flex-col md:grid md:grid-cols-12 gap-0 overflow-hidden bg-black">
             
             {/* COMMAND CENTER (Left Column, Cols 1-7) */}
             <div className="flex-1 md:col-span-7 border-l border-zinc-900 flex flex-col overflow-hidden relative bg-[#050505]">
@@ -539,15 +545,15 @@ export default function HomePage() {
               
               <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-10 animate-in fade-in duration-1000">
                 {/* Active Session Status - Mobile responsive */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 border-b border-zinc-900 pb-4 sm:pb-5 mb-8 sm:mb-12 md:mb-16 relative z-10">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 border-b border-zinc-900 pb-4 sm:pb-5 mb-6 md:mb-16 relative z-10">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 w-full sm:w-auto">
                     <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="p-2 bg-orange-500/10 border border-orange-500/20 rounded-sm text-orange-500">
+                      <div className="p-2 bg-orange-500/10 border border-orange-500/20 rounded-lg md:rounded-sm text-orange-500">
                         <Monitor size={14} className="sm:w-4 sm:h-4" strokeWidth={2.5} />
                       </div>
                       <div className="flex flex-col">
                         <div className="text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none mb-1">Active_Deployment</div>
-                        <div className="text-[10px] sm:text-xs font-black text-white tabular-nums tracking-widest">
+                        <div className="text-[11px] sm:text-xs font-black text-white tabular-nums tracking-widest">
                           {activeSession.startTime} <span className="mx-1 sm:mx-2 text-zinc-800">—</span> {activeSession.endTime}
                         </div>
                       </div>
@@ -572,11 +578,11 @@ export default function HomePage() {
 
                       <div className="flex items-center gap-2 sm:gap-3">
                         {isConfigOpen ? (
-                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1 bg-zinc-900/50 border border-zinc-800 rounded-sm animate-in fade-in slide-in-from-right-4 duration-500 w-full sm:w-auto">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-3 py-2 bg-zinc-900/50 border border-zinc-800 rounded-lg animate-in fade-in slide-in-from-right-4 duration-500 w-full sm:w-auto">
                             <select 
                               value={newTopicSubjectId}
                               onChange={(e) => setNewTopicSubjectId(e.target.value)}
-                              className="bg-transparent text-[9px] sm:text-[10px] text-white font-black outline-none border-none p-0 cursor-pointer flex-1 sm:flex-none min-w-[100px]"
+                              className="bg-transparent text-[10px] text-white font-black outline-none border-none p-0 cursor-pointer flex-1 sm:flex-none min-w-[100px]"
                             >
                               {workSubjects.map((s) => <option key={s.id} value={s.id} className="bg-black text-white">{s.name.toUpperCase()}</option>)}
                             </select>
@@ -585,34 +591,34 @@ export default function HomePage() {
                               type="time" 
                               value={newStartTime}
                               onChange={(e) => setNewStartTime(e.target.value)}
-                              className="bg-transparent text-[9px] sm:text-[10px] text-white font-black outline-none border-none p-0 font-mono w-14 sm:w-16"
+                              className="bg-transparent text-[10px] text-white font-black outline-none border-none p-0 font-mono w-14 sm:w-16"
                             />
-                            <span className="text-[7px] sm:text-[8px] text-zinc-700">TO</span>
+                            <span className="text-[8px] text-zinc-700">TO</span>
                             <input 
                               type="time" 
                               value={newEndTime}
                               onChange={(e) => setNewEndTime(e.target.value)}
-                              className="bg-transparent text-[9px] sm:text-[10px] text-white font-black outline-none border-none p-0 font-mono w-14 sm:w-16"
+                              className="bg-transparent text-[10px] text-white font-black outline-none border-none p-0 font-mono w-14 sm:w-16"
                             />
                             <button 
                               onClick={handleAddTopic}
-                              className="p-1 bg-white text-black rounded-sm hover:bg-orange-500 hover:text-white transition-all"
+                              className="p-1.5 bg-white text-black rounded-md md:rounded-sm hover:bg-orange-500 hover:text-white transition-all"
                             >
-                              <Plus size={11} className="sm:w-3 sm:h-3" strokeWidth={3} />
+                              <Plus size={12} strokeWidth={3} />
                             </button>
                             <button 
                               onClick={() => setIsConfigOpen(false)}
-                              className="p-1 text-zinc-600 hover:text-white"
+                              className="p-1.5 text-zinc-600 hover:text-white"
                             >
-                              <X size={11} className="sm:w-3 sm:h-3" />
+                              <X size={12} />
                             </button>
                           </div>
                         ) : (
                           <button 
                             onClick={() => setIsConfigOpen(true)}
-                            className="flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 border border-zinc-800 text-zinc-600 hover:text-white hover:border-zinc-600 transition-all rounded-sm text-[8px] sm:text-[9px] font-black uppercase tracking-widest"
+                            className="flex items-center gap-2 px-3 py-2 border border-zinc-800 text-zinc-600 hover:text-white hover:border-zinc-600 transition-all rounded-lg md:rounded-sm text-[9px] font-black uppercase tracking-widest"
                           >
-                            <Settings size={11} className="sm:w-3 sm:h-3" />
+                            <Settings size={12} />
                             Config_Topic
                           </button>
                         )}
@@ -620,7 +626,7 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 sm:gap-6">
+                  <div className="hidden md:flex items-center gap-4 sm:gap-6">
                     <Activity size={12} className="sm:w-3.5 sm:h-3.5 text-orange-500 animate-pulse" />
                   </div>
                 </div>
@@ -629,7 +635,7 @@ export default function HomePage() {
                 <div className="flex-1 flex flex-col items-center justify-center relative z-10 overflow-hidden">
                   
                   {/* Center: Clock & Map */}
-                  <div className="w-full flex flex-col items-center justify-center mb-auto pt-10">
+                  <div className="w-full flex flex-col items-center justify-center mb-auto pt-6 md:pt-10">
                     <PomodoroTimerAlternative 
                       activeSession={activeSession}
                       settings={pomodoroSettings}
@@ -638,21 +644,21 @@ export default function HomePage() {
                   </div>
 
                   {/* Bottom: Operational Timeline - High-End Modular Matrix */}
-                  <div className="w-full max-w-5xl mt-auto pb-4">
-                    <div className="flex gap-3 items-stretch h-40">
+                  <div className="w-full max-w-5xl mt-auto pb-4 px-2 md:px-0">
+                    <div className="flex flex-col md:flex-row gap-3 items-stretch md:h-40">
                       {/* CURRENT MISSION BOX */}
-                      <div className="flex-[1.4] relative">
-                        <div className="h-full bg-zinc-900/40 border border-orange-500/30 rounded-sm p-5 backdrop-blur-md relative overflow-hidden shadow-[0_0_40px_rgba(249,115,22,0.05)]">
+                      <div className="flex-1 md:flex-[1.4] relative">
+                        <div className="h-full bg-zinc-900/40 border border-orange-500/30 rounded-2xl md:rounded-sm p-5 md:p-5 backdrop-blur-md relative overflow-hidden shadow-lg md:shadow-[0_0_40px_rgba(249,115,22,0.05)]">
                           {/* Decorative background number */}
-                          <div className="absolute -right-2 -bottom-6 text-[100px] font-black text-white/[0.02] italic pointer-events-none select-none">NOW</div>
+                          <div className="absolute -right-2 -bottom-6 text-[80px] md:text-[100px] font-black text-white/[0.02] italic pointer-events-none select-none">NOW</div>
                           
                           <div className="relative z-10 flex flex-col h-full justify-between">
                             <div className="space-y-3">
                               {timelineData.current ? (
                                 <>
                                   <div className="flex items-center justify-between">
-                                    <div className="text-[9px] font-mono text-orange-500 font-black flex items-center gap-2">
-                                      <span className="w-1 h-1 rounded-full bg-orange-500 animate-pulse" />
+                                    <div className="text-[10px] font-mono text-orange-500 font-black flex items-center gap-2">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
                                       {timelineData.current.time}
                                     </div>
                                     {/* Countdown Logic */}
@@ -661,13 +667,13 @@ export default function HomePage() {
                                       const remaining = timelineData.current.endMins - nowMins;
                                       if (remaining <= 0) return null;
                                       return (
-                                        <div className="text-[11px] font-mono text-white/90 font-black tabular-nums bg-orange-500/10 px-2 py-0.5 rounded-sm">
+                                        <div className="text-[11px] font-mono text-white/90 font-black tabular-nums bg-orange-500/10 px-2 py-1 rounded-md md:rounded-sm">
                                           -{Math.floor(remaining / 60)}h {remaining % 60}m
                                         </div>
                                       );
                                     })()}
                                   </div>
-                                  <div className="text-xl font-black text-white uppercase leading-tight tracking-tighter">
+                                  <div className="text-xl md:text-xl font-black text-white uppercase leading-tight tracking-tighter">
                                     {timelineData.current.title.split(':')[0]}
                                   </div>
                                 </>
@@ -677,20 +683,20 @@ export default function HomePage() {
                             </div>
                             
                             {timelineData.current && (
-                              <div className="flex items-center justify-between">
+                              <div className="flex items-center justify-between mt-4 md:mt-0">
                                 <div className="flex items-center gap-2">
                                   <div 
-                                    className="w-2 h-2 rounded-full" 
+                                    className="w-2.5 h-2.5 rounded-full" 
                                     style={{ 
                                       backgroundColor: categories.find(c => c.id === timelineData.current?.categoryId)?.color || '#333',
-                                      boxShadow: `0 0 10px ${categories.find(c => c.id === timelineData.current?.categoryId)?.color}80`
+                                      boxShadow: `0 4px 10px ${categories.find(c => c.id === timelineData.current?.categoryId)?.color}40`
                                     }} 
                                   />
-                                  <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">
+                                  <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">
                                     {categories.find(c => c.id === timelineData.current?.categoryId)?.name || 'General'}
                                   </span>
                                 </div>
-                                <div className="text-[7px] font-mono text-zinc-700 font-black opacity-40">L-OPS_01</div>
+                                <div className="text-[8px] font-mono text-zinc-700 font-black opacity-40">L-OPS_01</div>
                               </div>
                             )}
                           </div>
@@ -699,8 +705,8 @@ export default function HomePage() {
                         </div>
                       </div>
 
-                      {/* UPCOMING SEQUENCE BOXES - Mobile: column, Desktop: grid */}
-                      <div className="flex-[3] grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+                      {/* UPCOMING SEQUENCE BOXES - Mobile: hidden on very small screens, 1 item on medium mobile */}
+                      <div className="hidden md:grid flex-[3] grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                         {timelineData.upcoming.map((event, i) => {
                           const category = categories.find(c => c.id === event.categoryId);
                           return (
@@ -742,8 +748,8 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* LOGGING & BUFFER (Right Column, Cols 8-12) - Mobile: full width below */}
-            <div className="md:col-span-5 flex flex-col overflow-hidden bg-black border-r border-zinc-900 border-t md:border-t-0">
+            {/* LOGGING & BUFFER (Right Column, Cols 8-12) - Mobile: hidden */}
+            <div className="hidden md:flex md:col-span-5 flex-col overflow-hidden bg-black border-r border-zinc-900 border-t md:border-t-0">
               
               {/* Daily Protocol Panel */}
               <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 border-b border-zinc-900 overflow-hidden relative">

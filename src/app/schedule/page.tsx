@@ -524,23 +524,23 @@ export default function SchedulePage() {
   }, [dailyEvents, categories]);
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-black text-white font-mono" dir="rtl">
+    <div className="h-screen overflow-hidden flex flex-col bg-black text-white font-mono pt-safe" dir="rtl">
       
       {/* Header - Aligned with Computer Page */}
       <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-4 sm:p-6 border-b border-zinc-900 bg-black/50 backdrop-blur-md shrink-0">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
           <h1 className="text-xl font-black italic tracking-[0.2em] text-white">DAILY OPS</h1>
           
-          <div className="flex items-center gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-sm">
+          <div className="flex items-center gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-lg">
             <button
               onClick={() => setCurrentDate(new Date(currentDate.setDate(currentDate.getDate() - 1)))}
-              className="p-1 text-zinc-500 hover:text-white transition-colors"
+              className="p-1 text-zinc-500 hover:text-orange-500 transition-colors"
             >
               <ChevronRight size={16} />
             </button>
             <button
               onClick={() => setCurrentDate(new Date())}
-              className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 hover:bg-white/10 transition-colors"
+              className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 text-zinc-400 hover:bg-white/10 transition-colors rounded-md"
             >
               היום
             </button>
@@ -551,14 +551,14 @@ export default function SchedulePage() {
             <div className="w-px h-4 bg-zinc-800 mx-1" />
             <button
               onClick={() => setCurrentDate(new Date(currentDate.setDate(currentDate.getDate() + 1)))}
-              className="p-1 text-zinc-500 hover:text-white transition-colors"
+              className="p-1 text-zinc-500 hover:text-orange-500 transition-colors"
             >
               <ChevronLeft size={16} />
             </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="hidden md:flex items-center gap-6">
           <div className="flex items-center gap-1 bg-zinc-900/30 p-1 border border-zinc-800 rounded-sm">
             <button 
               onClick={() => setViewMode('daily')}
@@ -598,7 +598,7 @@ export default function SchedulePage() {
       </header>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden bg-black">
         
         {viewMode === 'daily' ? (
           <div className="flex-1 flex overflow-hidden">
@@ -614,7 +614,7 @@ export default function SchedulePage() {
                 </div>
 
                 <div ref={timelineScrollRef} className="flex-1 overflow-y-auto p-4 sm:p-6 scrollbar-hide">
-                  <div className="space-y-3 relative">
+                  <div className="space-y-4 relative">
                     {dailyEvents.length > 0 ? (
                       dailyEvents.map((event, index) => {
                         const defaultCategory = categories.find(c => c.id === "0") || categories[0];
@@ -623,43 +623,39 @@ export default function SchedulePage() {
                         const isCurrent = index === currentEventIndex;
 
                         return (
-                          <div key={event.id} data-event-index={index} className="relative pr-6">
+                          <div key={event.id} data-event-index={index} className="relative pr-8 md:pr-6">
                             {/* Timeline Line */}
-                            <div className="absolute right-0 top-0 bottom-0 w-px bg-zinc-900/50" />
+                            <div className="absolute right-[4px] md:right-0 top-0 bottom-0 w-[2px] md:w-px bg-zinc-900/50" />
                             
                             <div className={cn(
-                              "transition-all duration-500 group relative py-4 px-6 border rounded-sm flex items-center gap-8 overflow-hidden",
+                              "transition-all duration-500 group relative py-4 px-5 md:px-6 border rounded-xl md:rounded-sm flex items-center gap-4 md:gap-8 overflow-hidden",
                               isCurrent 
-                                ? "bg-zinc-900/60 border-zinc-800 shadow-[0_0_25px_rgba(0,0,0,0.5)]" 
-                                : "border-transparent hover:bg-zinc-900/20 hover:border-zinc-900/50"
+                                ? "bg-zinc-900/60 border-zinc-800 shadow-xl md:shadow-[0_0_25px_rgba(0,0,0,0.5)]" 
+                                : "border-transparent bg-transparent hover:bg-zinc-900/20 hover:border-zinc-900/50"
                             )}>
                               {/* Active Indicator Background */}
                               {isCurrent && (
-                                <>
-                                  <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-white/[0.03] pointer-events-none" />
-                                  <div className="absolute -right-4 top-0 bottom-0 w-24 bg-orange-500/5 skew-x-[20deg] pointer-events-none" 
-                                       style={{ backgroundColor: `${category.color}10` }} />
-                                </>
+                                <div className="absolute inset-0 bg-white/[0.03] pointer-events-none" />
                               )}
 
                               {/* Status Bar */}
                               <div className={cn(
-                                "absolute right-[-1px] top-0 bottom-0 w-1 transition-all duration-500 z-10",
-                                isCurrent ? "opacity-100 shadow-[0_0_15px_currentColor]" : "opacity-0 group-hover:opacity-40"
+                                "absolute right-0 top-0 bottom-0 w-1 md:w-[1px] transition-all duration-500 z-10 rounded-r-xl md:rounded-none",
+                                isCurrent ? "opacity-100" : "opacity-0 group-hover:opacity-40"
                               )}
                                 style={{ backgroundColor: category.color }} />
                               
                               {/* Time & Icon Block */}
-                              <div className="flex items-center gap-5 shrink-0 min-w-[120px] relative z-10">
+                              <div className="flex items-center gap-4 md:gap-5 shrink-0 min-w-[100px] md:min-w-[120px] relative z-10">
                                 <div className={cn(
-                                  "p-3 rounded-sm border transition-all duration-500 bg-black shadow-inner relative",
-                                  isCurrent ? "border-zinc-700 scale-110 shadow-[0_0_15px_rgba(255,255,255,0.05)]" : "border-zinc-900 group-hover:border-zinc-700"
+                                  "p-2.5 md:p-3 rounded-lg md:rounded-sm border transition-all duration-500 bg-black shadow-sm md:shadow-inner relative",
+                                  isCurrent ? "border-zinc-700 scale-105 md:scale-110" : "border-zinc-900 group-hover:border-zinc-700"
                                 )}
                                   style={{ 
                                     color: category.color,
-                                    ...(isCurrent && { boxShadow: `0 0 20px ${category.color}40` })
+                                    ...(isCurrent && { boxShadow: `0 8px 20px ${category.color}15` })
                                   }}>
-                                  <Icon size={18} strokeWidth={isCurrent ? 3 : 2} className={cn(isCurrent && "animate-gentle-pulse")} />
+                                  <Icon size={18} strokeWidth={isCurrent ? 2.5 : 2} />
                                   
                                   {/* Pulsing Dot Next to Icon */}
                                   {isCurrent && (
@@ -671,7 +667,7 @@ export default function SchedulePage() {
                                 </div>
                                 <div className="flex flex-col justify-center">
                                   <span className={cn(
-                                    "text-base font-black tracking-tighter font-mono tabular-nums leading-none transition-all",
+                                    "text-sm md:text-base font-bold md:font-black tracking-tight font-mono tabular-nums leading-none transition-all",
                                     isCurrent ? "text-white" : "text-[#71717a]"
                                   )}>
                                     {event.time}
@@ -682,41 +678,34 @@ export default function SchedulePage() {
                               {/* Title & Category Content */}
                               <div className="flex-1 flex flex-col justify-center overflow-hidden relative z-10">
                                 <div className={cn(
-                                  "text-[10px] font-black uppercase tracking-[0.3em] mb-1.5 transition-opacity",
-                                  isCurrent ? "opacity-100" : "opacity-40 group-hover:opacity-100"
+                                  "text-[9px] md:text-[10px] font-bold md:font-black uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1 transition-opacity",
+                                  isCurrent ? "opacity-100" : "opacity-50 group-hover:opacity-100"
                                 )}
                                   style={{ color: category.color }}>
                                   {category.name}
                                 </div>
                                 <div className={cn(
-                                  "text-lg font-bold tracking-tight transition-all truncate",
-                                  isCurrent ? "text-white scale-[1.02] origin-right" : "text-zinc-500 group-hover:text-zinc-200"
+                                  "text-base md:text-lg font-bold tracking-tight transition-all truncate",
+                                  isCurrent ? "text-white" : "text-zinc-500 md:text-zinc-500 group-hover:text-zinc-200"
                                 )}>
                                   {event.title.replace(/:.*/, '').trim()}
                                 </div>
                               </div>
-
-                              {/* Scanning Effect for current event */}
-                              {isCurrent && (
-                                <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30 z-0">
-                                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-transparent h-[10%] w-full animate-scan" />
-                                </div>
-                              )}
                             </div>
                           </div>
                         );
                       })
                     ) : (
-                      <div className="h-64 flex flex-col items-center justify-center border border-dashed border-zinc-900/50 rounded-sm">
-                        <span className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-800 italic">אין נתונים ביומן</span>
+                      <div className="h-64 flex flex-col items-center justify-center border border-dashed border-zinc-900/50 rounded-xl md:rounded-sm">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-zinc-300 italic">אין נתונים ביומן</span>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Dashboard Column (Cols 6-12) */}
-              <div className="col-span-7 flex flex-col overflow-hidden bg-black">
+              {/* Dashboard Column (Cols 6-12) - Hidden on mobile */}
+              <div className="hidden md:flex col-span-7 flex-col overflow-hidden bg-black">
                 {/* Photo Widget */}
             <div className="h-[45%] border-b border-zinc-900 bg-zinc-950/10 p-8 flex flex-col overflow-hidden">
               <div className="flex items-center justify-between mb-6">

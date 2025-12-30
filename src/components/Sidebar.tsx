@@ -213,28 +213,21 @@ const Sidebar = () => {
       </aside>
 
       {/* Mobile Bottom Navigation */}
-      <aside className="fixed bottom-0 left-0 right-0 h-16 bg-black border-t border-white/[0.03] flex items-center justify-around z-50 md:hidden">
-        <Link href="/" className="flex flex-col items-center justify-center gap-1 flex-1 h-full relative group">
-          {time && (
-            <div className="flex items-center gap-1">
-              <span className="text-lg font-black text-orange-500 tabular-nums">
-                {time.getHours().toString().padStart(2, '0')}:{time.getMinutes().toString().padStart(2, '0')}
-              </span>
-            </div>
-          )}
+      <aside className="fixed bottom-0 left-0 right-0 h-[calc(4rem+env(safe-area-inset-bottom))] bg-black/90 backdrop-blur-xl border-t border-white/5 flex items-center justify-around z-50 md:hidden px-2 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+        <Link href="/" className="flex items-center justify-center flex-1 h-16 relative group">
           <LayoutDashboard 
-            size={18} 
-            strokeWidth={pathname === '/' ? 2.5 : 1.5}
+            size={24} 
+            strokeWidth={pathname === '/' ? 2 : 1.5}
             className={cn(
-              "transition-all duration-500",
+              "transition-all duration-300",
               pathname === '/' 
-                ? "text-orange-500 drop-shadow-[0_0_12px_rgba(249,115,22,0.5)]" 
-                : "text-zinc-800"
+                ? "text-orange-500" 
+                : "text-zinc-600"
             )} 
           />
         </Link>
         
-        {navItems.map((item) => {
+        {navItems.filter(item => item.href !== '/design-system' && item.href !== '/computer').map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
           
@@ -245,13 +238,13 @@ const Sidebar = () => {
               className="flex items-center justify-center flex-1 h-full relative group transition-all duration-300"
             >
               <Icon 
-                size={20} 
-                strokeWidth={isActive ? 2.5 : 1.5}
+                size={24} 
+                strokeWidth={isActive ? 2 : 1.5}
                 className={cn(
-                  "transition-all duration-500",
+                  "transition-all duration-300",
                   isActive 
-                    ? "text-orange-500 drop-shadow-[0_0_12px_rgba(249,115,22,0.5)]" 
-                    : "text-zinc-800"
+                    ? "text-orange-500" 
+                    : "text-zinc-600"
                 )} 
               />
             </Link>
@@ -263,9 +256,11 @@ const Sidebar = () => {
             await getTodayData();
             setIsParserOpen(true);
           }}
-          className="flex items-center justify-center flex-1 h-full text-zinc-700 hover:text-orange-500 transition-all duration-300 group"
+          className="flex items-center justify-center flex-1 h-full text-zinc-600 hover:text-orange-500 transition-all duration-300 group"
         >
-          <Plus size={20} className="group-hover:drop-shadow-[0_0_8px_currentColor]" strokeWidth={1.5} />
+          <div className="bg-orange-500 rounded-full p-2 shadow-lg shadow-orange-500/20 active:scale-90 transition-transform">
+            <Plus size={22} className="text-white" strokeWidth={2.5} />
+          </div>
         </button>
       </aside>
 

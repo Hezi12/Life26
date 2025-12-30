@@ -59,16 +59,16 @@ export function ParserModal({
   }, [input, dateString, categories]);
 
   return (
-    <div className="fixed inset-0 bg-black/98 z-[110] flex items-center justify-center p-4" onClick={onClose} dir="rtl">
-      <div className="bg-black border border-zinc-800 w-full max-w-4xl h-[75vh] flex flex-col shadow-[0_0_100px_rgba(0,0,0,1)] rounded-sm overflow-hidden" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/98 z-[110] flex items-center justify-center md:p-4 pt-safe" onClick={onClose} dir="rtl">
+      <div className="bg-black border-zinc-800 w-full md:max-w-4xl h-full md:h-[75vh] flex flex-col md:shadow-[0_0_100px_rgba(0,0,0,1)] rounded-none md:rounded-sm overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="p-6 border-b border-zinc-900 flex justify-between items-center bg-zinc-950/40">
           <div className="text-[10px] font-black uppercase tracking-[0.5em] text-orange-500 italic">Temporal_Data_Parser</div>
-          <button onClick={onClose} className="text-zinc-700 hover:text-white transition-colors"><X size={20} /></button>
+          <button onClick={onClose} className="text-zinc-700 hover:text-orange-500 transition-colors"><X size={24} /></button>
         </div>
-        <div className="flex-1 flex overflow-hidden">
-          <textarea autoFocus className="flex-1 bg-transparent p-10 outline-none text-2xl font-mono text-orange-500 resize-none leading-relaxed placeholder:opacity-10 scrollbar-hide text-right" 
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+          <textarea autoFocus className="flex-1 bg-transparent p-6 md:p-10 outline-none text-xl md:text-2xl font-mono text-orange-500 resize-none leading-relaxed placeholder:opacity-10 scrollbar-hide text-right" 
             placeholder="0700 INITIALIZE_OPS&#10;0900 CORE_SYSTEM_SYNC" value={input} onChange={e => setInput(e.target.value)} />
-          <div className="w-[30%] border-r border-zinc-900 p-8 bg-zinc-950/20 overflow-y-auto space-y-6 scrollbar-hide">
+          <div className="hidden md:block w-[30%] border-r border-zinc-900 p-8 bg-zinc-950/20 overflow-y-auto space-y-6 scrollbar-hide">
              <div className="text-[9px] font-black text-zinc-700 uppercase tracking-[0.3em] border-b border-zinc-900 pb-2 text-right">Processor_Stream</div>
              <div className="space-y-4">
               {parsed.map((e, i) => (
@@ -81,8 +81,8 @@ export function ParserModal({
              </div>
           </div>
         </div>
-        <div className="p-8 bg-zinc-950/40 border-t border-zinc-900">
-          <button onClick={() => onSave(parsed, input)} className="w-full bg-white text-black py-5 text-[10px] font-black uppercase tracking-[0.5em] hover:bg-orange-500 hover:text-black transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+        <div className="p-6 md:p-8 bg-zinc-950/40 border-t border-zinc-900">
+          <button onClick={() => onSave(parsed, input)} className="w-full bg-white text-black py-5 text-[10px] font-black uppercase tracking-[0.5em] hover:bg-orange-500 hover:text-white transition-all">
             Inject_To_Timeline ({parsed.length}_Events)
           </button>
         </div>

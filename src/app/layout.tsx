@@ -40,9 +40,9 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className={`${inter.className} bg-black text-white antialiased h-full`}>
+      <body className={`${inter.className} bg-black text-white antialiased h-full transition-colors duration-500`}>
         <ServiceWorkerRegistration />
-        <main className="min-h-full mr-16 md:mr-16 sm:mr-0 pb-16 sm:pb-0 overflow-y-auto">
+        <main className="min-h-full mr-0 md:mr-16 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0 overflow-y-auto">
           <div className="min-h-full">
             {children}
           </div>

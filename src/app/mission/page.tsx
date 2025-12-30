@@ -122,20 +122,20 @@ const MissionPage = () => {
   if (!isLoaded) return null;
 
   return (
-    <div className="h-screen bg-black text-white font-mono flex flex-col overflow-hidden" dir="rtl">
-      {/* Header HUD - Mobile responsive */}
-      <header className="p-4 sm:p-6 border-b border-zinc-900 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 shrink-0 bg-black z-20">
+    <div className="h-screen bg-black text-white font-mono flex flex-col overflow-hidden pt-safe" dir="rtl">
+      {/* HUD - Mobile responsive */}
+      <header className="p-4 sm:p-6 border-b border-zinc-900 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 shrink-0 bg-black backdrop-blur-md z-20">
         <div>
           <div className="flex items-center gap-2 sm:gap-3 mb-1">
             <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse shadow-[0_0_10px_#f97316]" />
-            <h1 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase">MISSION_PROTOCOL</h1>
+            <h1 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase text-white">MISSION_PROTOCOL</h1>
           </div>
           <p className="text-zinc-500 text-[9px] sm:text-[10px] uppercase tracking-[0.3em]">Single Objective Core / Chain of Command</p>
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 w-full sm:w-auto">
           {/* Navigation Controls - Mobile optimized */}
-          <div className="flex items-center gap-2 sm:gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-sm w-full sm:w-auto">
+          <div className="flex items-center gap-2 sm:gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-lg w-full sm:w-auto">
             <button
               onClick={() => setCurrentDate(new Date(currentDate.setDate(currentDate.getDate() - 1)))}
               className="p-1 text-zinc-500 hover:text-white transition-colors"
@@ -144,7 +144,7 @@ const MissionPage = () => {
             </button>
             <button
               onClick={() => setCurrentDate(new Date())}
-              className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 hover:bg-white/10 transition-colors"
+              className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 text-zinc-400 hover:bg-white/10 transition-colors rounded-md"
             >
               היום
             </button>
@@ -173,13 +173,13 @@ const MissionPage = () => {
 
           <div className="flex flex-col">
             <span className="text-[9px] sm:text-[10px] text-zinc-600 font-black uppercase tracking-widest leading-none mb-1">Active_Streak</span>
-            <span className="text-lg sm:text-xl font-black text-[#00d4ff] italic leading-none drop-shadow-[0_0_8px_rgba(0,212,255,0.3)]">{chainStats.streak}D</span>
+            <span className="text-lg sm:text-xl font-black text-[#00d4ff] italic leading-none">{chainStats.streak}D</span>
           </div>
         </div>
       </header>
 
-      {/* Progression Matrix - Top Dominant Section - Mobile responsive */}
-      <section className="shrink-0 p-4 sm:p-6 md:p-8 pb-4 border-b border-zinc-900/50 bg-[#020202] relative overflow-hidden">
+      {/* Progression Matrix - Hidden on mobile for minimalism */}
+      <section className="hidden md:block shrink-0 p-4 sm:p-6 md:p-8 pb-4 border-b border-zinc-900/50 bg-[#020202] relative overflow-hidden">
         {/* Decorative background grid with dual color nodes */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
              style={{ backgroundImage: 'radial-gradient(circle at center, #00d4ff 0.5px, transparent 1px)', backgroundSize: '32px 32px' }} />
@@ -284,23 +284,62 @@ const MissionPage = () => {
         </div>
       </section>
 
-      <main className="flex-1 flex flex-col md:grid md:grid-cols-12 gap-0 overflow-hidden">
+      <main className="flex-1 flex flex-col md:grid md:grid-cols-12 gap-0 overflow-y-auto md:overflow-hidden scrollbar-hide">
         
-        {/* Left Column: Yesterday's Debrief - Mobile: full width */}
-        <div className="flex-1 md:col-span-5 border-l border-zinc-900 p-4 sm:p-6 md:p-8 flex flex-col gap-4 sm:gap-6 overflow-hidden bg-[#030303]">
+        {/* Right Column: Today's Deployment - Shown first on mobile */}
+        <div className="flex-1 md:col-span-7 p-4 sm:p-6 md:p-8 flex flex-col gap-6 sm:gap-8 overflow-visible md:overflow-hidden">
+          <SectionHeader icon={<Zap size={14} />} title="Today_Deployment" color="text-orange-500" />
+          
+          <div className="flex-1 flex flex-col min-h-[300px] md:min-h-0 relative group animate-in fade-in slide-in-from-left-4 duration-700">
+            <div className="absolute -right-0 top-0 h-12 w-[2px] bg-orange-500 transition-all duration-500 rounded-full" />
+            <div className="flex-1 flex flex-col bg-zinc-900/10 border border-orange-500/10 focus-within:border-orange-500/20 p-6 md:p-8 transition-all relative overflow-hidden rounded-2xl md:rounded-sm shadow-sm md:shadow-none">
+              <div className="text-[9px] sm:text-[10px] text-orange-500/50 mb-4 sm:mb-6 uppercase font-black tracking-[0.3em] relative z-10">Core_Objective_Input</div>
+              <textarea
+                value={currentMission.mission}
+                onChange={(e) => saveMission(dateString, { mission: e.target.value })}
+                placeholder="מה הדבר הכי חשוב היום?..."
+                className="flex-1 w-full bg-transparent text-xl sm:text-2xl md:text-3xl font-black italic text-white placeholder:text-zinc-900 outline-none resize-none leading-tight relative z-10 scrollbar-hide"
+              />
+              
+              <div className="mt-4 sm:mt-6 md:mt-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0 pt-4 sm:pt-6 border-t border-zinc-900/50 relative z-10 shrink-0">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                  <div className="flex flex-col">
+                    <span className="text-[7px] sm:text-[8px] text-zinc-600 uppercase font-black mb-1">Protocol</span>
+                    <span className="text-[9px] sm:text-[10px] text-zinc-400 font-bold uppercase tracking-tighter">Focus</span>
+                  </div>
+                  <div className="hidden md:block w-px h-6 bg-zinc-900" />
+                  <div className="flex flex-col">
+                    <span className="text-[7px] sm:text-[8px] text-zinc-600 uppercase font-black mb-1">Constraint</span>
+                    <span className="text-[9px] sm:text-[10px] text-zinc-400 font-bold uppercase tracking-tighter">Single_Focus</span>
+                  </div>
+                </div>
+                
+                {currentMission.mission && (
+                  <div className="flex items-center gap-2 text-orange-500 bg-orange-500/5 px-3 py-1.5 rounded-full md:rounded-sm border border-orange-500/10">
+                    <Target size={12} className="sm:w-3.5 sm:h-3.5" />
+                    <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest">Target_Locked</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Left Column: Yesterday's Debrief - Mobile: shown below today */}
+        <div className="flex-1 md:col-span-5 border-l border-zinc-900 p-4 sm:p-6 md:p-8 flex flex-col gap-4 sm:gap-6 overflow-visible md:overflow-hidden bg-[#030303] md:rounded-none rounded-t-[2.5rem] mt-4 md:mt-0 shadow-[0_-20px_40px_rgba(0,0,0,0.5)] md:shadow-none">
           <SectionHeader icon={<History size={14} />} title="Yesterday_Debrief" color="text-[#00d4ff]" />
           
           {yesterdayMission ? (
             <div className="flex-1 flex flex-col gap-6 min-h-0 animate-in fade-in slide-in-from-right-4 duration-700">
-              <div className="bg-[#00d4ff]/[0.02] border border-[#00d4ff]/10 p-5 rounded-sm relative group shrink-0">
-                <div className="absolute -right-1 top-4 h-6 w-[2px] bg-[#00d4ff]/30" />
+              <div className="bg-[#00d4ff]/[0.02] border border-[#00d4ff]/10 p-5 rounded-2xl md:rounded-sm relative group shrink-0">
+                <div className="absolute -right-0 top-4 h-6 w-[2px] bg-[#00d4ff]/30 rounded-full" />
                 <div className="text-[9px] text-[#00d4ff]/60 mb-2 uppercase font-black tracking-widest">Objective</div>
                 <div className="text-zinc-300 text-base font-bold italic leading-tight">
                   "{yesterdayMission.mission}"
                 </div>
               </div>
 
-              <div className="space-y-3 shrink-0">
+              <div className="space-y-4 shrink-0">
                 <div className="text-[9px] text-zinc-600 uppercase font-black tracking-widest">Execution_Score</div>
                 <div className="flex gap-2">
                   {[0, 1, 2, 3].map((s) => (
@@ -308,9 +347,9 @@ const MissionPage = () => {
                       key={s}
                       onClick={() => saveMission(yesterdayStr, { score: s as any })}
                       className={cn(
-                        "flex-1 py-2 border transition-all font-black text-xs",
+                        "flex-1 py-3 md:py-2 border transition-all font-black text-xs rounded-xl md:rounded-none",
                         yesterdayMission.score === s 
-                          ? "bg-[#00d4ff] border-[#00d4ff] text-black shadow-[0_0_15px_rgba(0,212,255,0.3)]" 
+                          ? "bg-[#00d4ff] border-[#00d4ff] text-black shadow-lg shadow-[#00d4ff]/20" 
                           : "bg-transparent border-zinc-800 text-zinc-700 hover:border-[#00d4ff]/50 hover:text-white"
                       )}
                     >
@@ -320,66 +359,24 @@ const MissionPage = () => {
                 </div>
               </div>
 
-              <div className="flex-1 flex flex-col gap-3 min-h-0">
+              <div className="flex-1 flex flex-col gap-4 min-h-[200px] md:min-h-0 pb-20 md:pb-0">
                 <div className="text-[9px] text-zinc-600 uppercase font-black tracking-widest">Reflection_Log</div>
-                <div className="flex-1 bg-black border border-zinc-900 p-4 relative group">
-                  <div className="absolute -right-[1px] top-0 bottom-0 w-[1px] bg-zinc-800 group-focus-within:bg-[#00d4ff] transition-colors" />
+                <div className="flex-1 bg-black border border-zinc-900 p-5 rounded-2xl md:rounded-sm relative group">
                   <textarea
                     value={yesterdayMission.reflection || ""}
                     onChange={(e) => saveMission(yesterdayStr, { reflection: e.target.value })}
-                    placeholder="Analyze execution results..."
-                    className="w-full h-full bg-transparent text-sm text-zinc-400 focus:text-zinc-200 outline-none resize-none transition-colors scrollbar-hide"
+                    placeholder="איך היה הביצוע?..."
+                    className="w-full h-full bg-transparent text-sm text-zinc-400 focus:text-zinc-200 outline-none resize-none transition-colors scrollbar-hide font-medium"
                   />
                 </div>
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center border border-dashed border-zinc-900 rounded-sm text-center">
+            <div className="flex-1 min-h-[200px] flex flex-col items-center justify-center border border-dashed border-zinc-900 rounded-2xl md:rounded-sm text-center">
               <AlertCircle size={20} className="text-zinc-800 mb-3" />
               <p className="text-[10px] text-zinc-700 uppercase tracking-widest">No data for {yesterdayStr}</p>
             </div>
           )}
-        </div>
-
-        {/* Right Column: Today's Deployment - Mobile: full width */}
-        <div className="flex-1 md:col-span-7 p-4 sm:p-6 md:p-8 flex flex-col gap-6 sm:gap-8 overflow-hidden">
-          <SectionHeader icon={<Zap size={14} />} title="Today_Deployment" color="text-orange-500" />
-          
-          <div className="flex-1 flex flex-col min-h-0 relative group animate-in fade-in slide-in-from-left-4 duration-700">
-            <div className="absolute -right-2 top-0 bottom-0 w-[2px] bg-orange-500 group-focus-within:h-full h-12 transition-all duration-500" />
-            <div className="flex-1 flex flex-col bg-zinc-900/10 border border-orange-500/10 focus-within:border-orange-500/20 p-4 sm:p-6 md:p-8 transition-all relative overflow-hidden">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.02)_0%,transparent_70%)] pointer-events-none" />
-              
-              <div className="text-[9px] sm:text-[10px] text-orange-500/50 mb-4 sm:mb-6 uppercase font-black tracking-[0.3em] relative z-10">Core_Objective_Input</div>
-              <textarea
-                value={currentMission.mission}
-                onChange={(e) => saveMission(dateString, { mission: e.target.value })}
-                placeholder="DEFINE THE ONE THING THAT MATTERS TODAY..."
-                className="flex-1 w-full bg-transparent text-xl sm:text-2xl md:text-3xl font-black italic text-white placeholder:text-zinc-900 outline-none resize-none leading-tight relative z-10 scrollbar-hide"
-              />
-              
-              <div className="mt-4 sm:mt-6 md:mt-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0 pt-4 sm:pt-6 border-t border-zinc-900/50 relative z-10 shrink-0">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-                  <div className="flex flex-col">
-                    <span className="text-[7px] sm:text-[8px] text-zinc-600 uppercase font-black mb-1">Protocol</span>
-                    <span className="text-[9px] sm:text-[10px] text-zinc-400 font-bold uppercase tracking-tighter">No_Operational_Overload</span>
-                  </div>
-                  <div className="w-px h-6 bg-zinc-900" />
-                  <div className="flex flex-col">
-                    <span className="text-[7px] sm:text-[8px] text-zinc-600 uppercase font-black mb-1">Constraint</span>
-                    <span className="text-[9px] sm:text-[10px] text-zinc-400 font-bold uppercase tracking-tighter">Single_Focus_Only</span>
-                  </div>
-                </div>
-                
-                {currentMission.mission && (
-                  <div className="flex items-center gap-2 text-orange-500 animate-pulse bg-orange-500/5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-sm border border-orange-500/10">
-                    <Target size={12} className="sm:w-3.5 sm:h-3.5" />
-                    <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest">Target_Locked</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
         </div>
       </main>
     </div>

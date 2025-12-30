@@ -173,23 +173,23 @@ export default function HabitsPage() {
   if (!isLoaded) return null;
 
   return (
-    <div className="h-screen bg-black text-white font-mono flex flex-col overflow-hidden" dir="rtl">
+    <div className="h-screen bg-black text-white font-mono flex flex-col overflow-hidden pt-safe" dir="rtl">
       {/* Header HUD - Mobile responsive */}
-      <header className="p-4 sm:p-6 border-b border-zinc-900 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 shrink-0 bg-black z-20">
+      <header className="p-4 sm:p-6 border-b border-zinc-900 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 shrink-0 bg-black backdrop-blur-md z-20">
         <div>
           <div className="flex items-center gap-2 sm:gap-3 mb-1">
             <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse shadow-[0_0_10px_#f97316]" />
-            <h1 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase">HABIT_PROTOCOL</h1>
+            <h1 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase text-white">HABIT_PROTOCOL</h1>
           </div>
           <p className="text-zinc-500 text-[9px] sm:text-[10px] uppercase tracking-[0.3em]">Neural Rewiring / Systematic Discipline</p>
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 w-full sm:w-auto">
-          <div className="flex items-center gap-2 sm:gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-sm w-full sm:w-auto">
+          <div className="flex items-center gap-2 sm:gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-lg w-full sm:w-auto">
             <button onClick={() => setCurrentTime(new Date(currentTime.setDate(currentTime.getDate() - 1)))} className="p-1 text-zinc-500 hover:text-white transition-colors">
               <ChevronRight size={14} className="sm:w-4 sm:h-4" />
             </button>
-            <button onClick={() => setCurrentTime(new Date())} className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 hover:bg-white/10 transition-colors">
+            <button onClick={() => setCurrentTime(new Date())} className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 text-zinc-400 hover:bg-white/10 transition-colors rounded-md">
               היום
             </button>
             <div className="w-px h-4 bg-zinc-800 mx-1" />
@@ -214,13 +214,13 @@ export default function HabitsPage() {
 
           <div className="flex flex-col">
             <span className="text-[9px] sm:text-[10px] text-zinc-600 font-black uppercase tracking-widest leading-none mb-1">Deployment_Sync</span>
-            <span className="text-lg sm:text-xl font-black text-[#00d4ff] italic leading-none drop-shadow-[0_0_8px_rgba(0,212,255,0.3)]">{stats.percent}%</span>
+            <span className="text-lg sm:text-xl font-black text-[#00d4ff] italic leading-none">{stats.percent}%</span>
           </div>
         </div>
       </header>
 
-      {/* Progression Matrix - Continuity Section - Mobile responsive */}
-      <section className="shrink-0 p-4 sm:p-6 md:p-8 pb-4 border-b border-zinc-900/50 bg-[#020202] relative overflow-hidden">
+      {/* Progression Matrix - Hidden on mobile for minimalism */}
+      <section className="hidden md:block shrink-0 p-4 sm:p-6 md:p-8 pb-4 border-b border-zinc-900/50 bg-[#020202] relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
              style={{ backgroundImage: 'radial-gradient(circle at center, #00d4ff 0.5px, transparent 1px)', backgroundSize: '32px 32px' }} />
         
@@ -255,7 +255,7 @@ export default function HabitsPage() {
 
               return (
                 <div 
-                  key={i}
+                  key={i} 
                   className={cn(
                     "h-16 sm:h-20 border rounded-sm flex flex-col items-center justify-center transition-all relative group/cell overflow-hidden",
                     dayPercent > 0 ? "bg-orange-500/[0.03] border-orange-500/20" : "bg-black border-zinc-900",
@@ -286,24 +286,24 @@ export default function HabitsPage() {
         </div>
       </section>
 
-      <main className="flex-1 grid grid-cols-12 gap-0 overflow-hidden">
+      <main className="flex-1 flex flex-col md:grid md:grid-cols-12 gap-0 overflow-hidden bg-black">
         
         {/* RIGHT: Daily Protocols (Input) */}
-        <div className="col-span-7 border-l border-zinc-900 p-8 flex flex-col gap-6 overflow-hidden bg-black">
+        <div className="flex-1 md:col-span-7 border-l border-zinc-900 p-4 md:p-8 flex flex-col gap-6 overflow-hidden bg-black">
           <div className="flex items-center justify-between shrink-0">
             <SectionHeader icon={<Activity size={14} />} title="Active_Protocols" color="text-orange-500" />
             <button 
               onClick={() => setIsConfiguring(true)}
-              className="px-3 py-1.5 border border-orange-500/30 text-[9px] font-black text-orange-500 hover:bg-orange-500 hover:text-black transition-all rounded-sm uppercase tracking-widest flex items-center gap-2"
+              className="hidden md:flex px-3 py-1.5 border border-orange-500/30 text-[9px] font-black text-orange-500 hover:bg-orange-500 hover:text-black transition-all rounded-sm uppercase tracking-widest items-center gap-2"
             >
               <Plus size={12} strokeWidth={3} />
               Deploy_New
             </button>
           </div>
           
-          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto pr-0 md:pr-2 scrollbar-hide">
             {activeHabits.length > 0 ? (
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-4 md:gap-3">
                 {activeHabits.map((habit) => {
                   const isCompleted = logs[`${habit.id}-${dateString}`]?.completed;
                   const Icon = ICON_MAP[habit.iconName] || Zap;
@@ -313,7 +313,7 @@ export default function HabitsPage() {
                       key={habit.id}
                       onClick={() => toggleHabit(habit.id)}
                       className={cn(
-                        "group relative flex items-center justify-between p-5 rounded-sm border transition-all duration-500 cursor-pointer overflow-hidden",
+                        "group relative flex items-center justify-between p-5 md:p-5 rounded-2xl md:rounded-sm border transition-all duration-500 cursor-pointer overflow-hidden",
                         isCompleted 
                           ? "bg-orange-500/[0.02] border-orange-500/20" 
                           : "bg-zinc-900/10 border-zinc-900 hover:border-zinc-800"
@@ -321,49 +321,37 @@ export default function HabitsPage() {
                     >
                       <div 
                         className={cn(
-                          "absolute right-0 top-0 bottom-0 w-[2px] transition-all duration-500",
-                          isCompleted ? "bg-orange-500 shadow-[0_0_15px_#f97316]" : "bg-zinc-800 group-hover:bg-zinc-700"
+                          "absolute right-0 top-0 bottom-0 w-1 md:w-[2px] transition-all duration-500 rounded-r-2xl md:rounded-none",
+                          isCompleted ? "bg-orange-500" : "bg-zinc-800"
                         )} 
                       />
 
-                      <div className="relative flex items-center gap-5">
+                      <div className="relative flex items-center gap-4 md:gap-5">
                         <div 
                           className={cn(
-                            "w-10 h-10 flex items-center justify-center rounded-sm border transition-all duration-500",
+                            "w-10 h-10 flex items-center justify-center rounded-xl md:rounded-sm border transition-all duration-500 bg-black",
                             isCompleted 
-                              ? "bg-orange-500/10 border-orange-500/30 text-orange-500" 
-                              : "bg-black border-zinc-800 text-zinc-600 group-hover:text-zinc-400"
+                              ? "border-orange-500/30 text-orange-500 shadow-sm" 
+                              : "border-zinc-800 text-zinc-600 group-hover:text-zinc-400"
                           )}
                         >
-                          <Icon size={18} strokeWidth={1.5} />
+                          <Icon size={18} strokeWidth={2} />
                         </div>
                         <div>
                           <h3 className={cn(
-                            "text-[13px] font-bold uppercase tracking-wider transition-colors",
+                            "text-[14px] md:text-[13px] font-bold uppercase tracking-wider transition-colors",
                             isCompleted ? "text-white" : "text-zinc-500"
                           )}>
                             {habit.name}
                           </h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[7px] font-black uppercase text-zinc-700 tracking-widest">
-                              {habit.frequency === 'daily' ? 'Constant' : 'Scheduled'}
-                            </span>
-                          </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-6">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); deleteHabit(habit.id); }}
-                          className="p-2 opacity-0 group-hover:opacity-100 text-zinc-800 hover:text-red-500 transition-all"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                        
+                      <div className="flex items-center gap-4 md:gap-6">
                         <div className={cn(
-                          "w-6 h-6 rounded-sm border-2 flex items-center justify-center transition-all duration-300",
+                          "w-6 h-6 rounded-full md:rounded-sm border-2 flex items-center justify-center transition-all duration-300",
                           isCompleted 
-                            ? "bg-orange-500 border-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.4)]" 
+                            ? "bg-orange-500 border-orange-500 shadow-lg shadow-orange-500/20 md:shadow-none" 
                             : "border-zinc-800 group-hover:border-zinc-700"
                         )}>
                           {isCompleted && <Check size={14} strokeWidth={4} className="text-black" />}
@@ -374,16 +362,16 @@ export default function HabitsPage() {
                 })}
               </div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center border border-dashed border-zinc-900 rounded-sm opacity-40">
+              <div className="h-full flex flex-col items-center justify-center border border-dashed border-zinc-900 rounded-2xl md:rounded-sm opacity-40">
                 <Target size={24} className="text-zinc-800 mb-4" />
-                <p className="text-[10px] uppercase tracking-[0.3em]">No protocols deployed for this cycle</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">No protocols deployed for this cycle</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* LEFT: Metrics & Analysis */}
-        <div className="col-span-5 border-r border-zinc-900 p-8 flex flex-col gap-10 overflow-hidden bg-[#030303]">
+        {/* LEFT: Metrics & Analysis - Hidden on mobile */}
+        <div className="hidden md:flex col-span-5 border-r border-zinc-900 p-8 flex flex-col gap-10 overflow-hidden bg-[#030303]">
           <SectionHeader icon={<History size={14} />} title="System_Analytics" color="text-[#00d4ff]" />
           
           {/* Circular Progress */}

@@ -709,34 +709,34 @@ export default function ComputerPage() {
   };
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-black text-white font-mono" dir="rtl">
+    <div className="h-screen overflow-hidden flex flex-col bg-black text-white font-mono pt-safe" dir="rtl">
       {/* Top Header - Aligned with Schedule Page */}
       <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-4 sm:p-6 border-b border-zinc-900 bg-black/50 backdrop-blur-md shrink-0">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
-          <h1 className="text-xl font-black italic tracking-[0.2em] text-white">CORE TERMINAL</h1>
+          <h1 className="text-xl font-black italic tracking-[0.2em] text-white uppercase">CORE TERMINAL</h1>
           
           {/* Date Navigation */}
-          <div className="flex items-center gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-sm">
+          <div className="flex items-center gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-lg md:rounded-sm w-full sm:w-auto">
             <button
               onClick={() => navigateDate('prev')}
-              className="p-1 text-zinc-500 hover:text-white transition-colors"
+              className="p-1 text-zinc-500 hover:text-orange-500 transition-colors"
             >
               <ChevronRight size={16} />
             </button>
             <button
               onClick={() => navigateDate('today')}
-              className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 hover:bg-white/10 transition-colors"
+              className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 text-zinc-400 hover:bg-white/10 transition-colors rounded-md md:rounded-sm"
             >
               היום
             </button>
             <div className="w-px h-4 bg-zinc-800 mx-1" />
-            <div className="text-xs font-bold text-orange-500 px-2 min-w-[140px] text-center">
+            <div className="text-[10px] md:text-xs font-bold text-orange-500 px-2 min-w-[120px] md:min-w-[140px] text-center">
               {formatDateDisplay(currentDate)}
             </div>
             <div className="w-px h-4 bg-zinc-800 mx-1" />
             <button
               onClick={() => navigateDate('next')}
-              className="p-1 text-zinc-500 hover:text-white transition-colors"
+              className="p-1 text-zinc-500 hover:text-orange-500 transition-colors"
             >
               <ChevronLeft size={16} />
             </button>
@@ -745,15 +745,14 @@ export default function ComputerPage() {
 
         <button
           onClick={() => setIsSettingsOpen(true)}
-          className="p-2 text-zinc-500 hover:text-orange-500 transition-all hover:scale-110"
+          className="hidden md:block p-2 text-zinc-500 hover:text-orange-500 transition-all hover:scale-110"
         >
           <Settings size={18} />
         </button>
       </header>
 
-      {/* Main Grid - Fixed Height */}
       {/* Main Grid - Mobile: column, Desktop: grid */}
-      <div className="flex-1 flex flex-col md:grid md:grid-cols-12 gap-0 overflow-hidden">
+      <div className="flex-1 flex flex-col md:grid md:grid-cols-12 gap-0 overflow-hidden bg-black">
         
         {/* Left Column: Analysis & Sessions (Cols 1-5) - Mobile: full width */}
         <div className="flex-1 md:col-span-5 border-l border-zinc-900 flex flex-col overflow-hidden bg-[#050505]">
@@ -783,8 +782,8 @@ export default function ComputerPage() {
                   </div>
                 </div>
 
-              {/* Pie Chart Representation */}
-              <div className="flex justify-center">
+              {/* Pie Chart Representation - Hidden on mobile for minimalism */}
+              <div className="hidden sm:flex justify-center">
                 <div className="relative w-20 h-20 sm:w-24 sm:h-24">
                   <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                     <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#0a0a0a" strokeWidth="3" />
@@ -808,7 +807,7 @@ export default function ComputerPage() {
 
             {/* Subjects Breakdown */}
             {statistics.topicsBySubject.length > 0 && (
-              <div className="mt-8 space-y-3">
+              <div className="mt-6 md:mt-8 space-y-3">
                 <div className="text-[8px] text-zinc-700 uppercase tracking-[0.3em] mb-2 font-black border-b border-zinc-900 pb-1">Segment_Allocation</div>
                 <div className="grid grid-cols-1 gap-3">
                   {statistics.topicsBySubject.slice(0, 4).map(({ subject, minutes }) => {
@@ -827,7 +826,7 @@ export default function ComputerPage() {
                             style={{ 
                               width: `${percent}%`, 
                               backgroundColor: subject.color,
-                              boxShadow: `0 0 10px ${subject.color}60`
+                              boxShadow: `0 0 10px ${subject.color}40`
                             }}
                           />
                         </div>
@@ -840,21 +839,21 @@ export default function ComputerPage() {
           </div>
 
           {/* Work Sessions Section - Scrollable */}
-          <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 scrollbar-hide">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <div className="w-1 h-4 bg-[#00d4ff] shadow-[0_0_8px_#00d4ff]" />
-                <h2 className="text-[10px] uppercase tracking-[0.3em] text-zinc-400 font-black">Active_Sessions</h2>
+                <h2 className="text-[9px] sm:text-[10px] uppercase tracking-[0.3em] text-zinc-400 font-black">Active_Sessions</h2>
               </div>
-              <div className="text-[8px] text-zinc-700 font-mono tracking-widest italic">TEMPORAL_STREAM_v2.0</div>
+              <div className="text-[8px] text-zinc-700 font-mono tracking-widest italic">STREAM_v2.0</div>
             </div>
 
             {workSessions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 border border-dashed border-zinc-900 rounded-sm bg-black/20">
-                <span className="text-[9px] uppercase tracking-[0.4em] text-zinc-800 italic">No_Active_Data_Found</span>
+              <div className="flex flex-col items-center justify-center py-12 border border-dashed border-zinc-900 rounded-2xl md:rounded-sm bg-black/20">
+                <span className="text-[9px] uppercase tracking-[0.4em] text-zinc-800 italic">No_Active_Data</span>
               </div>
             ) : (
-              <div className="space-y-8">
+              <div className="space-y-6 md:space-y-8">
                 {workSessions.map((session) => {
                   const sessionTopics = getTopicsForSession(session.event.id);
                   return (
@@ -863,9 +862,9 @@ export default function ComputerPage() {
                       <div className="absolute right-0 top-0 bottom-0 w-px bg-zinc-900 group-hover/sess:bg-zinc-800 transition-colors" />
                       <div className="absolute -right-[2.5px] top-0 w-[6px] h-[6px] rounded-full bg-zinc-900 group-hover/sess:bg-[#00d4ff] transition-all group-hover/sess:shadow-[0_0_8px_#00d4ff]" />
                       
-                      <div className="flex items-center justify-between mb-4 bg-zinc-900/20 p-2 rounded-sm border border-zinc-800/50">
+                      <div className="flex items-center justify-between mb-4 bg-zinc-900/20 p-2 rounded-lg md:rounded-sm border border-zinc-800/50">
                         <div className="flex items-center gap-3">
-                          <div className="text-[9px] text-[#00d4ff] font-mono font-bold tracking-tighter">
+                          <div className="text-[10px] text-[#00d4ff] font-mono font-bold tracking-tighter">
                             {session.startTime} {'>'} {session.endTime}
                           </div>
                           <div className="w-1 h-1 rounded-full bg-zinc-800" />
@@ -875,14 +874,14 @@ export default function ComputerPage() {
                         </div>
                         <button
                           onClick={() => handleAddTopic(session.event.id)}
-                          className="w-7 h-7 flex items-center justify-center border border-zinc-800 text-zinc-600 hover:border-[#00d4ff] hover:text-[#00d4ff] transition-all rounded-sm bg-black/40 hover:scale-110"
+                          className="w-7 h-7 flex items-center justify-center border border-zinc-800 text-zinc-400 hover:border-[#00d4ff] hover:text-[#00d4ff] transition-all rounded-lg md:rounded-sm bg-black/40 hover:scale-110"
                         >
                           <Plus size={14} />
                         </button>
                       </div>
                       
                       {sessionTopics.length > 0 && (
-                        <div className="space-y-2 mt-2">
+                        <div className="space-y-3 mt-2">
                           {sessionTopics.map((topic) => {
                             const subject = workSubjects.find(s => s.id === topic.subjectId);
                             if (!subject) return null;
@@ -890,18 +889,16 @@ export default function ComputerPage() {
                             return (
                               <div
                                 key={topic.id}
-                                className="group relative bg-zinc-900/40 border border-zinc-800/50 p-4 hover:border-zinc-700 hover:bg-zinc-900/60 transition-all rounded-sm overflow-hidden"
+                                className="group relative bg-zinc-900/40 border border-zinc-800/50 p-4 hover:border-zinc-700 hover:bg-zinc-900/60 transition-all rounded-xl md:rounded-sm overflow-hidden shadow-sm md:shadow-none"
                               >
-                                <div className="absolute right-0 top-0 bottom-0 w-1" style={{ backgroundColor: subject.color, boxShadow: `0 0 10px ${subject.color}40` }} />
+                                <div className="absolute right-0 top-0 bottom-0 w-1 rounded-r-xl md:rounded-none" style={{ backgroundColor: subject.color, boxShadow: `0 0 10px ${subject.color}20` }} />
                                 <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-5">
-                                    <div className="p-3 bg-black border border-zinc-800 rounded-sm relative shadow-2xl" style={{ color: subject.color }}>
-                                      <Icon size={20} strokeWidth={2.5} className="drop-shadow-[0_0_8px_currentColor]" />
-                                      {/* Decorative corner */}
-                                      <div className="absolute top-0 right-0 w-1.5 h-1.5 border-t border-r border-white/10" />
+                                  <div className="flex items-center gap-4 md:gap-5">
+                                    <div className="p-2.5 md:p-3 bg-black border border-zinc-800 rounded-lg md:rounded-sm relative shadow-sm" style={{ color: subject.color }}>
+                                      <Icon size={18} strokeWidth={2.5} />
                                     </div>
-                                    <div className="flex flex-col gap-1">
-                                      <div className="text-[11px] font-black text-white uppercase tracking-[0.1em] group-hover:text-orange-500 transition-colors">{subject.name}</div>
+                                    <div className="flex flex-col gap-0.5 md:gap-1">
+                                      <div className="text-[12px] md:text-[11px] font-black text-white uppercase tracking-[0.05em] group-hover:text-orange-500 transition-colors">{subject.name}</div>
                                       <div className="flex items-center gap-2">
                                         <div className="text-[9px] text-zinc-500 font-mono font-bold">{topic.startTime} - {topic.endTime}</div>
                                         <div className="w-1 h-1 rounded-full bg-zinc-800" />
@@ -912,13 +909,13 @@ export default function ComputerPage() {
                                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                                     <button
                                       onClick={() => handleEditTopic(topic)}
-                                      className="p-2 text-zinc-600 hover:text-white transition-colors bg-zinc-950 border border-zinc-800 rounded-sm"
+                                      className="p-2 text-zinc-600 hover:text-white transition-colors bg-zinc-950 border border-zinc-800 rounded-lg md:rounded-sm"
                                     >
                                       <Edit2 size={12} />
                                     </button>
                                     <button
                                       onClick={() => handleDeleteTopic(topic.id)}
-                                      className="p-2 text-zinc-600 hover:text-red-500 transition-colors bg-zinc-950 border border-zinc-800 rounded-sm"
+                                      className="p-2 text-zinc-600 hover:text-red-500 transition-colors bg-zinc-950 border border-zinc-800 rounded-lg md:rounded-sm"
                                     >
                                       <Trash2 size={12} />
                                     </button>
@@ -937,8 +934,8 @@ export default function ComputerPage() {
           </div>
         </div>
 
-        {/* Right Column: Writing Area (Cols 6-12) - Mobile: full width below */}
-        <div className="flex-1 md:col-span-7 flex flex-col overflow-hidden bg-black border-r border-zinc-900/50 border-t md:border-t-0">
+        {/* Right Column: Writing Area (Cols 6-12) - Hidden on mobile for minimalism */}
+        <div className="hidden md:flex md:col-span-7 flex flex-col overflow-hidden bg-black border-r border-zinc-900/50 border-t md:border-t-0">
           
           {/* Daily Notes - WritingC style */}
           <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 border-b border-zinc-900 overflow-hidden relative">
