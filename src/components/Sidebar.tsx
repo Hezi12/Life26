@@ -27,6 +27,9 @@ const Sidebar = () => {
   const [todayEvents, setTodayEvents] = useState<Event[]>([]);
   const [todayText, setTodayText] = useState<string>("");
 
+  const today = new Date();
+  const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
