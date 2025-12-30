@@ -125,6 +125,10 @@ const Sidebar = () => {
       
       setIsParserOpen(false);
       
+      // Update local state
+      setTodayEvents(newEvents);
+      setTodayText(rawText);
+      
       // Notify other components
       window.dispatchEvent(new CustomEvent('life26-update', { 
         detail: { type: 'eventsUpdated', source: 'sidebar' } 
