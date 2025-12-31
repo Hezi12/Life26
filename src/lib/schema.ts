@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, boolean, jsonb, timestamp, serial } from 'drizzle-orm/pg-core';
 
 // Categories table
 export const categories = pgTable('categories', {
@@ -110,4 +110,26 @@ export const chatSessions = pgTable('chat_sessions', {
   title: text('title').notNull(),
   messages: jsonb('messages').notNull(),
   updatedAt: integer('updated_at').notNull(),
+});
+
+// Focus Sessions table
+export const focusSessions = pgTable('focus_sessions', {
+  id: text('id').primaryKey(),
+  sessionNumber: serial('session_number'),
+  startTime: timestamp('start_time').notNull(),
+  endTime: timestamp('end_time'),
+  durationMinutes: integer('duration_minutes'),
+  notes: text('notes'),
+  aiSummary: text('ai_summary'),
+  aiAffirmation: text('ai_affirmation'),
+  nextSessionPlan: timestamp('next_session_plan'),
+  status: text('status').notNull(), // 'completed', 'abandoned'
+});
+
+// Focus Settings table
+export const focusSettings = pgTable('focus_settings', {
+  id: text('id').primaryKey().default('user_settings'),
+  schedule: jsonb('schedule').$type<{ day: string; time: string }[]>(),
+  notificationPreMinutes: integer('notification_pre_minutes').default(15),
+  notifyOnTime: boolean('notify_on_time').default(true),
 });

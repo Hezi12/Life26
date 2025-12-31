@@ -15,7 +15,10 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "Life26",
   },
-  themeColor: "#f97316",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/icon-192.png",
+  },
 };
 
 export const viewport: Viewport = {
@@ -24,6 +27,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
+  themeColor: "#f97316",
 };
 
 export default function RootLayout({
