@@ -103,3 +103,11 @@ export const photos = pgTable('photos', {
   dateString: text('date_string').notNull(),
   photoData: text('photo_data').notNull(), // base64 encoded image
 });
+
+// Chat Sessions table
+export const chatSessions = pgTable('chat_sessions', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  messages: jsonb('messages').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+});
