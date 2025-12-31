@@ -25,7 +25,8 @@ export async function POST(req: Request) {
 
         // Insert new session
         await db.insert(focusSessions).values({
-            id, // Assuming ID is generated client-side or we can let DB handle it if UUID, but plan said text PK
+            id,
+            sessionNumber,
             startTime: new Date(startTime),
             endTime: endTime ? new Date(endTime) : null,
             durationMinutes,
@@ -40,5 +41,15 @@ export async function POST(req: Request) {
     } catch (error) {
         console.error("Failed to save focus session:", error);
         return NextResponse.json({ error: "Failed to save session" }, { status: 500 });
+    }
+}
+
+export async function DELETE() {
+    try {
+        await db.delete(focusSessions);
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error("Failed to reset focus sessions:", error);
+        return NextResponse.json({ error: "Failed to reset sessions" }, { status: 500 });
     }
 }

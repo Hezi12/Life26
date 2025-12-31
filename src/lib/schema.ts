@@ -115,7 +115,7 @@ export const chatSessions = pgTable('chat_sessions', {
 // Focus Sessions table
 export const focusSessions = pgTable('focus_sessions', {
   id: text('id').primaryKey(),
-  sessionNumber: serial('session_number'),
+  sessionNumber: integer('session_number'),
   startTime: timestamp('start_time').notNull(),
   endTime: timestamp('end_time'),
   durationMinutes: integer('duration_minutes'),
