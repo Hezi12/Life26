@@ -525,7 +525,7 @@ export default function HomePage() {
       ) : (
         <>
           {/* Header - Mobile responsive */}
-          <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-4 pt-[calc(1rem+env(safe-area-inset-top))] sm:p-6 border-b border-zinc-900 bg-black/50 backdrop-blur-md shrink-0">
+          <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-4 pt-[calc(1rem+env(safe-area-inset-top))] sm:p-5 lg:p-6 border-b border-zinc-900 bg-black/50 backdrop-blur-md shrink-0">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 w-full sm:w-auto">
               <h1 className="text-lg sm:text-xl font-black italic tracking-[0.2em] text-white">OPERATIONAL HUD</h1>
               
@@ -557,7 +557,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="hidden sm:flex items-center gap-3 sm:gap-4">
+            <div className="hidden sm:flex items-center gap-3 lg:gap-4">
               <div className="flex items-center gap-2 sm:gap-2.5 px-3 py-1.5 bg-zinc-900/30 border border-zinc-800 rounded-sm">
                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)] animate-pulse" />
                 <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500">System_Online</span>
@@ -573,9 +573,9 @@ export default function HomePage() {
               {/* Background scanner effect */}
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.03)_0%,transparent_70%)] pointer-events-none" />
               
-              <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-10 animate-in fade-in duration-1000">
+              <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 lg:p-10 animate-in fade-in duration-1000">
                 {/* Active Session Status - Mobile responsive */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 border-b border-zinc-900 pb-4 sm:pb-5 mb-6 md:mb-16 relative z-10">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 border-b border-zinc-900 pb-4 sm:pb-5 mb-6 md:mb-8 lg:mb-16 relative z-10">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 w-full sm:w-auto">
                     <div className="flex items-center gap-3 sm:gap-4">
                       <div className="p-2 bg-orange-500/10 border border-orange-500/20 rounded-lg md:rounded-sm text-orange-500">
@@ -665,7 +665,7 @@ export default function HomePage() {
                 <div className="flex-1 flex flex-col items-center justify-center relative z-10 overflow-hidden">
                   
                   {/* Center: Clock & Map */}
-                  <div className="w-full flex flex-col items-center justify-center mb-auto pt-6 md:pt-10">
+                  <div className="w-full flex flex-col items-center justify-center mb-auto pt-6 md:pt-8 lg:pt-10">
                     <PomodoroTimerAlternative 
                       activeSession={activeSession}
                       settings={pomodoroSettings}
@@ -675,12 +675,12 @@ export default function HomePage() {
 
                   {/* Bottom: Operational Timeline - High-End Modular Matrix */}
                   <div className="w-full max-w-5xl mt-auto pb-4 px-2 md:px-0">
-                    <div className="flex flex-col md:flex-row gap-3 items-stretch md:h-40">
+                    <div className="flex flex-col md:flex-row gap-3 items-stretch md:h-32 lg:h-40">
                       {/* CURRENT MISSION BOX */}
                       <div className="flex-1 md:flex-[1.4] relative">
-                        <div className="h-full bg-zinc-900/40 border border-orange-500/30 rounded-2xl md:rounded-sm p-5 md:p-5 backdrop-blur-md relative overflow-hidden shadow-lg md:shadow-[0_0_40px_rgba(249,115,22,0.05)]">
+                        <div className="h-full bg-zinc-900/40 border border-orange-500/30 rounded-2xl md:rounded-sm p-4 lg:p-5 backdrop-blur-md relative overflow-hidden shadow-lg md:shadow-[0_0_40px_rgba(249,115,22,0.05)]">
                           {/* Decorative background number */}
-                          <div className="absolute -right-2 -bottom-6 text-[80px] md:text-[100px] font-black text-white/[0.02] italic pointer-events-none select-none">NOW</div>
+                          <div className="absolute -right-2 -bottom-6 text-[80px] md:text-[90px] lg:text-[100px] font-black text-white/[0.02] italic pointer-events-none select-none">NOW</div>
                           
                           <div className="relative z-10 flex flex-col h-full justify-between">
                             <div className="space-y-3">
@@ -782,10 +782,10 @@ export default function HomePage() {
             <div className="hidden md:flex md:col-span-5 flex-col overflow-hidden bg-black border-r border-zinc-900 border-t md:border-t-0">
               
               {/* Daily Protocol Panel */}
-              <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 border-b border-zinc-900 overflow-hidden relative">
+              <div className="flex-1 flex flex-col p-4 sm:p-5 md:p-6 lg:p-8 border-b border-zinc-900 overflow-hidden relative">
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:30px_30px] pointer-events-none" />
                 
-                <div className="flex items-center justify-between mb-6 relative z-10">
+                <div className="flex items-center justify-between mb-4 lg:mb-6 relative z-10">
                   <div className="flex items-center gap-3">
                     <div className="w-1 h-4 bg-orange-500 shadow-[0_0_8px_#f97316]" />
                     <h2 className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-black">Daily_Protocol</h2>
@@ -795,7 +795,7 @@ export default function HomePage() {
                 
                 <div className="flex-1 relative group z-10">
                   <div className="absolute -right-1 top-0 h-8 w-[2px] bg-orange-500 group-focus-within:h-full transition-all duration-700 ease-in-out" />
-                  <div className="h-full bg-zinc-950/40 p-8 border border-white/5 focus-within:border-orange-500/20 transition-all rounded-sm shadow-[inset_0_0_40px_rgba(0,0,0,0.8)] backdrop-blur-sm">
+                  <div className="h-full bg-zinc-950/40 p-4 sm:p-5 lg:p-8 border border-white/5 focus-within:border-orange-500/20 transition-all rounded-sm shadow-[inset_0_0_40px_rgba(0,0,0,0.8)] backdrop-blur-sm">
                     <textarea
                       ref={dailyNotesRef}
                       defaultValue={dailyNotes?.content || ''}
@@ -816,8 +816,8 @@ export default function HomePage() {
               </div>
 
               {/* Static Buffer Panel */}
-              <div className="h-[35%] min-h-[200px] sm:min-h-[250px] md:h-[35%] flex flex-col p-4 sm:p-6 md:p-8 overflow-hidden bg-[#030303] relative">
-                <div className="flex items-center justify-between mb-4 relative z-10">
+              <div className="h-[30%] lg:h-[35%] min-h-[150px] sm:min-h-[200px] flex flex-col p-4 sm:p-5 md:p-6 lg:p-8 overflow-hidden bg-[#030303] relative">
+                <div className="flex items-center justify-between mb-3 lg:mb-4 relative z-10">
                   <div className="flex items-center gap-3">
                     <div className="w-1 h-4 bg-zinc-800" />
                     <h2 className="text-[10px] uppercase tracking-[0.4em] text-zinc-600 font-black">Static_Buffer</h2>
@@ -825,7 +825,7 @@ export default function HomePage() {
                   <div className="text-[8px] font-mono text-zinc-800 uppercase tracking-[0.3em] font-black italic">MEM_CACHE</div>
                 </div>
                 
-                <div className="flex-1 bg-black p-6 flex flex-col transition-all border border-zinc-900/50 focus-within:border-zinc-700/50 relative group/buffer">
+                <div className="flex-1 bg-black p-4 lg:p-6 flex flex-col transition-all border border-zinc-900/50 focus-within:border-zinc-700/50 relative group/buffer">
                   <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-zinc-800" />
                   <textarea
                     ref={stickyNotesRef}
@@ -838,7 +838,7 @@ export default function HomePage() {
                     className="w-full h-full bg-transparent text-zinc-500 text-xs sm:text-[13px] font-mono leading-relaxed p-0 resize-none outline-none placeholder:text-zinc-900 scrollbar-hide"
                     placeholder="Persistent data encryption area..."
                   />
-                  <div className="flex justify-end mt-2 opacity-30 group-focus-within/buffer:opacity-100 transition-opacity">
+                  <div className="flex justify-end mt-1 lg:mt-2 opacity-30 group-focus-within/buffer:opacity-100 transition-opacity">
                     <div className="text-[7px] text-zinc-800 font-black uppercase tracking-[0.4em]">SYNC_READY</div>
                   </div>
                 </div>
@@ -950,8 +950,8 @@ function PomodoroTimerAlternative({ activeSession, settings, currentTime }: any)
     : 0;
 
   return (
-    <div className="flex flex-col items-center gap-10">
-      <div className="relative w-72 h-72 flex items-center justify-center">
+    <div className="flex flex-col items-center gap-6 md:gap-8 lg:gap-10">
+      <div className="relative w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 flex items-center justify-center">
         {/* Ultra Modern Clean Ring */}
         <svg className="w-full h-full -rotate-90 absolute" viewBox="0 0 100 100">
           <circle cx="50" cy="50" r="48" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
@@ -969,13 +969,13 @@ function PomodoroTimerAlternative({ activeSession, settings, currentTime }: any)
       </svg>
 
         <div className="flex flex-col items-center justify-center z-10">
-          <div className="text-[9px] font-black uppercase tracking-[0.5em] text-zinc-600 mb-1 opacity-80 italic leading-none">
+          <div className="text-[7px] sm:text-[8px] md:text-[9px] font-black uppercase tracking-[0.5em] text-zinc-600 mb-1 opacity-80 italic leading-none">
             {mode === 'work' ? 'FOCUS_STREAM' : 'RECOVERY_MODE'}
         </div>
-          <div className="text-7xl font-black tracking-tighter text-white tabular-nums leading-none">
+          <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter text-white tabular-nums leading-none">
           {formatTime(timeLeft)}
           </div>
-          <div className="mt-6 flex items-center justify-center">
+          <div className="mt-4 sm:mt-5 md:mt-6 flex items-center justify-center">
             <div className={cn("w-1 h-1 rounded-full animate-pulse", mode === 'work' ? "bg-orange-500" : "bg-cyan-500")} />
           </div>
         </div>
