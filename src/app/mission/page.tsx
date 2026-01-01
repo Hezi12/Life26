@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { 
-  Target, 
-  ChevronRight, 
-  ChevronLeft, 
-  Check, 
-  Activity, 
+import {
+  Target,
+  ChevronRight,
+  ChevronLeft,
+  Check,
+  Activity,
   Zap,
   Star,
   History,
@@ -46,7 +46,7 @@ const MissionPage = () => {
       }
       setIsLoaded(true);
     };
-    
+
     loadData();
   }, []);
 
@@ -56,16 +56,16 @@ const MissionPage = () => {
       ...(missions[date] || { id: `mission-${date}`, dateString: date, mission: "" }),
       ...data
     };
-    
+
     try {
       await api.saveMission(missionData);
-      
+
       const newMissions = {
         ...missions,
         [date]: missionData
       };
       setMissions(newMissions);
-      
+
       window.dispatchEvent(new CustomEvent('life26-update', { detail: { type: 'missions-updated' } }));
     } catch (error) {
       console.error('Failed to save mission', error);
@@ -74,7 +74,7 @@ const MissionPage = () => {
 
   const resetDay = async () => {
     if (!confirm("האם לאפס את כל הנתונים של היום הנבחר?")) return;
-    
+
     try {
       // Note: We don't have a delete endpoint for missions, so we'll just update it to empty
       await api.saveMission({
@@ -84,11 +84,11 @@ const MissionPage = () => {
         reflection: null,
         score: null,
       });
-      
+
       const newMissions = { ...missions };
       delete newMissions[dateString];
       setMissions(newMissions);
-      
+
       window.dispatchEvent(new CustomEvent('life26-update', { detail: { type: 'missions-updated' } }));
     } catch (error) {
       console.error('Failed to reset mission', error);
@@ -102,10 +102,10 @@ const MissionPage = () => {
   const chainStats = useMemo(() => {
     const keys = Object.keys(missions).sort();
     if (keys.length === 0) return { streak: 0, total: 0 };
-    
+
     let streak = 0;
     let checkDate = new Date();
-    
+
     while (true) {
       const dStr = checkDate.toISOString().split('T')[0];
       if (missions[dStr] && missions[dStr].mission) {
@@ -115,7 +115,7 @@ const MissionPage = () => {
         break;
       }
     }
-    
+
     return { streak, total: keys.length };
   }, [missions]);
 
@@ -181,9 +181,9 @@ const MissionPage = () => {
       {/* Progression Matrix - Hidden on mobile for minimalism */}
       <section className="hidden md:block shrink-0 p-4 sm:p-6 md:p-8 pb-4 border-b border-zinc-900/50 bg-[#020202] relative overflow-hidden">
         {/* Decorative background grid with dual color nodes */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
              style={{ backgroundImage: 'radial-gradient(circle at center, #00d4ff 0.5px, transparent 1px)', backgroundSize: '32px 32px' }} />
-        
+
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -192,20 +192,20 @@ const MissionPage = () => {
             </div>
             <span className="text-[8px] sm:text-[9px] text-[#00d4ff]/50 font-mono italic uppercase tracking-widest">11_Day_Continuity_Window</span>
           </div>
-          
+
           {/* Grid - Mobile: scrollable */}
           <div className="grid grid-cols-11 gap-2 sm:gap-3 overflow-x-auto sm:overflow-x-visible">
             {Array.from({ length: 11 }).map((_, i) => {
               const d = new Date(currentDate);
-              d.setDate(d.getDate() + (i - 5)); 
+              d.setDate(d.getDate() + (i - 5));
               const dStr = d.toISOString().split('T')[0];
               const m = missions[dStr];
               const isSelected = dStr === dateString;
               const isToday = dStr === new Date().toISOString().split('T')[0];
               const isFuture = d.getTime() > new Date().getTime() && !isToday;
-              
+
               return (
-                <div 
+                <div
                   key={i}
                   className={cn(
                     "h-20 sm:h-24 border rounded-sm flex flex-col items-center justify-center transition-all relative group/cell overflow-hidden",
@@ -216,7 +216,7 @@ const MissionPage = () => {
                 >
                   {/* Decorative corner */}
                   {isSelected && <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-orange-500" />}
-                  
+
                   <div className={cn(
                     "text-[9px] sm:text-[10px] font-black mb-3 sm:mb-4 tabular-nums",
                     isSelected ? "text-orange-500" : (isToday ? "text-[#00d4ff]" : "text-zinc-700")
@@ -246,13 +246,13 @@ const MissionPage = () => {
                       return (
                         <div className="relative flex items-center justify-center">
                           <Check size={18} className="text-orange-500 drop-shadow-[0_0_8px_#f97316]" />
-                          <div 
+                          <div
                             className={cn(
                               "absolute -bottom-4 w-1 h-1 rounded-full",
                               m.score === 3 ? "bg-orange-500 shadow-[0_0_8px_#f97316]" :
                               m.score === 2 ? "bg-orange-500/60" :
                               m.score === 1 ? "bg-orange-500/30" : "bg-zinc-700"
-                            )} 
+                            )}
                           />
                         </div>
                       );
@@ -265,7 +265,7 @@ const MissionPage = () => {
                   {m?.mission && !m?.score && (
                     <div className="absolute bottom-2 text-[7px] font-black text-orange-500/40 tracking-tighter uppercase">In_Progress</div>
                   )}
-                  
+
                   {/* Tooltip on hover */}
                   <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden group-hover/cell:block z-50 animate-in fade-in zoom-in-95 duration-200">
                     <div className="bg-zinc-900 border border-zinc-800 p-3 text-[10px] whitespace-nowrap rounded shadow-2xl min-w-[140px]">
@@ -285,11 +285,11 @@ const MissionPage = () => {
       </section>
 
       <main className="flex-1 flex flex-col md:grid md:grid-cols-12 gap-0 overflow-y-auto md:overflow-hidden scrollbar-hide">
-        
+
         {/* Right Column: Today's Deployment - Shown first on mobile */}
         <div className="flex-1 md:col-span-7 p-4 sm:p-6 md:p-8 flex flex-col gap-6 sm:gap-8 overflow-visible md:overflow-hidden">
           <SectionHeader icon={<Zap size={14} />} title="Today_Deployment" color="text-orange-500" />
-          
+
           <div className="flex-1 flex flex-col min-h-[300px] md:min-h-0 relative group animate-in fade-in slide-in-from-left-4 duration-700">
             <div className="absolute -right-0 top-0 h-12 w-[2px] bg-orange-500 transition-all duration-500 rounded-full" />
             <div className="flex-1 flex flex-col bg-zinc-900/10 border border-orange-500/10 focus-within:border-orange-500/20 p-6 md:p-8 transition-all relative overflow-hidden rounded-2xl md:rounded-sm shadow-sm md:shadow-none">
@@ -300,7 +300,7 @@ const MissionPage = () => {
                 placeholder="מה הדבר הכי חשוב היום?..."
                 className="flex-1 w-full bg-transparent text-xl sm:text-2xl md:text-3xl font-black italic text-white placeholder:text-zinc-900 outline-none resize-none leading-tight relative z-10 scrollbar-hide"
               />
-              
+
               <div className="mt-4 sm:mt-6 md:mt-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0 pt-4 sm:pt-6 border-t border-zinc-900/50 relative z-10 shrink-0">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
                   <div className="flex flex-col">
@@ -313,7 +313,7 @@ const MissionPage = () => {
                     <span className="text-[9px] sm:text-[10px] text-zinc-400 font-bold uppercase tracking-tighter">Single_Focus</span>
                   </div>
                 </div>
-                
+
                 {currentMission.mission && (
                   <div className="flex items-center gap-2 text-orange-500 bg-orange-500/5 px-3 py-1.5 rounded-full md:rounded-sm border border-orange-500/10">
                     <Target size={12} className="sm:w-3.5 sm:h-3.5" />
@@ -328,7 +328,7 @@ const MissionPage = () => {
         {/* Left Column: Yesterday's Debrief - Mobile: shown below today */}
         <div className="flex-1 md:col-span-5 border-l border-zinc-900 p-4 sm:p-6 md:p-8 flex flex-col gap-4 sm:gap-6 overflow-visible md:overflow-hidden bg-[#030303] md:rounded-none rounded-t-[2.5rem] mt-4 md:mt-0 shadow-[0_-20px_40px_rgba(0,0,0,0.5)] md:shadow-none">
           <SectionHeader icon={<History size={14} />} title="Yesterday_Debrief" color="text-[#00d4ff]" />
-          
+
           {yesterdayMission ? (
             <div className="flex-1 flex flex-col gap-6 min-h-0 animate-in fade-in slide-in-from-right-4 duration-700">
               <div className="bg-[#00d4ff]/[0.02] border border-[#00d4ff]/10 p-5 rounded-2xl md:rounded-sm relative group shrink-0">
@@ -348,8 +348,8 @@ const MissionPage = () => {
                       onClick={() => saveMission(yesterdayStr, { score: s as any })}
                       className={cn(
                         "flex-1 py-3 md:py-2 border transition-all font-black text-xs rounded-xl md:rounded-none",
-                        yesterdayMission.score === s 
-                          ? "bg-[#00d4ff] border-[#00d4ff] text-black shadow-lg shadow-[#00d4ff]/20" 
+                        yesterdayMission.score === s
+                          ? "bg-[#00d4ff] border-[#00d4ff] text-black shadow-lg shadow-[#00d4ff]/20"
                           : "bg-transparent border-zinc-800 text-zinc-700 hover:border-[#00d4ff]/50 hover:text-white"
                       )}
                     >

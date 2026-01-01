@@ -72,6 +72,10 @@ export default function FocusPage() {
   const [reviewData, setReviewData] = useState<{ summary: string, affirmation: string } | null>(null);
   const [nextPlan, setNextPlan] = useState<string>("");
 
+  // History Edit State
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editStartTime, setEditStartTime] = useState<string>("");
+
   // UI Effects State
   const [isMouseOver, setIsMouseOver] = useState(true);
 
@@ -116,28 +120,31 @@ export default function FocusPage() {
     if (!notes.trim()) return;
     setIsLoading(true);
 
+    let currentReviewData = null;
     try {
       const res = await fetch('/api/focus/ai', {
         method: 'POST',
         body: JSON.stringify({ notes }),
         headers: { 'Content-Type': 'application/json' }
       });
-      const data = await res.json();
-      setReviewData(data);
-      setView('summary');
+      currentReviewData = await res.json();
+      setReviewData(currentReviewData);
     } catch (e) {
       console.error("AI Error", e);
-      setReviewData({ summary: "Error generating summary", affirmation: "Persistence is key." });
-      setView('summary');
-    } finally {
-      setIsLoading(false);
+      currentReviewData = { summary: "Error generating summary", affirmation: "Persistence is key." };
+      setReviewData(currentReviewData);
     }
+
+    // Automatically save session after getting AI data
+    await saveSession(currentReviewData);
+    setView('summary');
+    setIsLoading(false);
   };
 
-  const saveSession = async () => {
+  const saveSession = async (manualReviewData?: { summary: string, affirmation: string }) => {
     if (!startTime) return;
-    setIsLoading(true);
-
+    
+    const finalReviewData = manualReviewData || reviewData;
     const endTime = new Date();
     const durationMinutes = Math.floor(elapsed / 60);
 
@@ -156,8 +163,8 @@ export default function FocusPage() {
       endTime: endTime.toISOString(),
       durationMinutes,
       notes,
-      aiSummary: reviewData?.summary,
-      aiAffirmation: reviewData?.affirmation,
+      aiSummary: finalReviewData?.summary,
+      aiAffirmation: finalReviewData?.affirmation,
       nextSessionPlan: planDate.toISOString(),
       status: 'completed'
     };
@@ -169,9 +176,34 @@ export default function FocusPage() {
         headers: { 'Content-Type': 'application/json' }
       });
       await fetchHistory();
-      setView('dashboard');
     } catch (e) {
       console.error("Save Error", e);
+    }
+  };
+
+  const updateSessionStartTime = async (id: string) => {
+    if (!editStartTime) return;
+    setIsLoading(true);
+
+    try {
+      const session = history.find(s => s.id === id);
+      if (!session) return;
+
+      const newStartDate = new Date(session.startTime);
+      const [h, m] = editStartTime.split(':').map(Number);
+      newStartDate.setHours(h);
+      newStartDate.setMinutes(m);
+
+      await fetch('/api/focus/session', {
+        method: 'PATCH',
+        body: JSON.stringify({ id, startTime: newStartDate.toISOString() }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      setEditingSessionId(null);
+      await fetchHistory();
+    } catch (e) {
+      console.error("Update Error", e);
     } finally {
       setIsLoading(false);
     }
@@ -319,11 +351,10 @@ export default function FocusPage() {
               </div>
 
               <button
-                onClick={saveSession}
-                disabled={isLoading}
+                onClick={() => setView('dashboard')}
                 className="mt-12 text-[10px] tracking-[0.5em] text-zinc-500 uppercase hover:text-white transition-colors duration-500 py-4"
               >
-                {isLoading ? "שומר..." : "סיום המיקוד"}
+                חזרה ללוח הבקרה
               </button>
             </div>
           </div>
@@ -344,8 +375,40 @@ export default function FocusPage() {
                     <div className="text-[10px] font-mono text-zinc-700 uppercase tracking-widest">#{session.sessionNumber}</div>
                     <div>
                       <div className="text-sm text-zinc-300 font-light">{new Date(session.startTime).toLocaleDateString()}</div>
-                      <div className="text-[10px] text-zinc-600 uppercase tracking-widest mt-1">
-                        {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {session.durationMinutes} דקות
+                      <div className="flex items-center gap-2 mt-1">
+                        {editingSessionId === session.id ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="time"
+                              value={editStartTime}
+                              onChange={(e) => setEditStartTime(e.target.value)}
+                              className="bg-zinc-800 text-white text-[10px] font-mono p-1 rounded outline-none"
+                            />
+                            <button 
+                              onClick={() => updateSessionStartTime(session.id)}
+                              className="text-[10px] text-green-500 hover:text-green-400 font-bold uppercase"
+                            >
+                              שמור
+                            </button>
+                            <button 
+                              onClick={() => setEditingSessionId(null)}
+                              className="text-[10px] text-zinc-500 hover:text-white font-bold uppercase"
+                            >
+                              ביטול
+                            </button>
+                          </div>
+                        ) : (
+                          <div 
+                            className="text-[10px] text-zinc-600 uppercase tracking-widest cursor-pointer hover:text-zinc-400 transition-colors flex items-center gap-2"
+                            onClick={() => {
+                              setEditingSessionId(session.id);
+                              const date = new Date(session.startTime);
+                              setEditStartTime(`${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`);
+                            }}
+                          >
+                            {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {session.durationMinutes} דקות
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

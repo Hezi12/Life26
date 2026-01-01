@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const habitId = searchParams.get('habitId');
     const dateString = searchParams.get('dateString');
-    
+
     if (habitId && dateString) {
       const result = await db.select().from(habitLogs).where(
         and(eq(habitLogs.habitId, habitId), eq(habitLogs.dateString, dateString))
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { id, habitId, dateString, completed } = body;
-    
+
     await db.insert(habitLogs).values({
       id: id || `log-${habitId}-${dateString}`,
       habitId,
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       target: habitLogs.id,
       set: { completed: completed !== undefined ? completed : false },
     });
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error saving habit log:', error);

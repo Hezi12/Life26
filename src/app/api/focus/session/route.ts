@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { focusSessions } from "@/lib/schema";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 export async function GET() {
     try {
@@ -41,6 +41,26 @@ export async function POST(req: Request) {
     } catch (error) {
         console.error("Failed to save focus session:", error);
         return NextResponse.json({ error: "Failed to save session" }, { status: 500 });
+    }
+}
+
+export async function PATCH(req: Request) {
+    try {
+        const body = await req.json();
+        const { id, startTime } = body;
+
+        if (!id || !startTime) {
+            return NextResponse.json({ error: "ID and startTime are required" }, { status: 400 });
+        }
+
+        await db.update(focusSessions)
+            .set({ startTime: new Date(startTime) })
+            .where(eq(focusSessions.id, id));
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error("Failed to update focus session:", error);
+        return NextResponse.json({ error: "Failed to update session" }, { status: 500 });
     }
 }
 

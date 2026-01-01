@@ -7,7 +7,7 @@ export type SoundType = 'default' | 'bell' | 'chime' | 'beep' | 'success';
 let sharedCtx: AudioContext | null = null;
 
 /**
- * Initializes or resumes the audio context. 
+ * Initializes or resumes the audio context.
  * Should be called on a user gesture (click/keypress).
  */
 export function initAudio() {
@@ -23,7 +23,7 @@ export function initAudio() {
 
 export function playSound(type: SoundType = 'default', volume: number = 0.3, title?: string, body?: string) {
   if (typeof window === 'undefined') return;
-  
+
   initAudio();
   const ctx = sharedCtx;
   if (!ctx) return;
@@ -32,24 +32,24 @@ export function playSound(type: SoundType = 'default', volume: number = 0.3, tit
   if (title && 'Notification' in window && Notification.permission === 'granted') {
     new Notification(title, { body, icon: '/favicon.ico' });
   }
-  
+
   const playTone = (freq: number, start: number, duration: number, type: OscillatorType = 'sine', ramp: boolean = true) => {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    
+
     osc.type = type;
     osc.frequency.setValueAtTime(freq, start);
-    
+
     gain.gain.setValueAtTime(volume, start);
     if (ramp) {
       gain.gain.exponentialRampToValueAtTime(0.01, start + duration);
     } else {
       gain.gain.setValueAtTime(0, start + duration);
     }
-    
+
     osc.connect(gain);
     gain.connect(ctx.destination);
-    
+
     osc.start(start);
     osc.stop(start + duration);
   };

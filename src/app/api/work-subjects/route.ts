@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { id, name, color, iconName } = body;
-    
+
     await db.insert(workSubjects).values({
       id,
       name,
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       target: workSubjects.id,
       set: { name, color, iconName },
     });
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error saving work subject:', error);
@@ -39,11 +39,11 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    
+
     if (!id) {
       return NextResponse.json({ error: 'Subject ID required' }, { status: 400 });
     }
-    
+
     await db.delete(workSubjects).where(eq(workSubjects.id, id));
     return NextResponse.json({ success: true });
   } catch (error) {

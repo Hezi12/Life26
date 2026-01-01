@@ -73,14 +73,14 @@ export function GeminiChat({ onClose }: GeminiChatProps) {
         setMessages([]);
         setCurrentSessionId(null);
         setInput("");
-        if (window.innerWidth < 768) setIsSidebarOpen(false);
+        if (window.innerWidth < 740) setIsSidebarOpen(false);
     };
 
     const loadSession = (session: ChatSession) => {
         const msgs = session.messages as Message[]; // Type assertion for JSONB
         setMessages(msgs);
         setCurrentSessionId(session.id);
-        if (window.innerWidth < 768) setIsSidebarOpen(false);
+        if (window.innerWidth < 740) setIsSidebarOpen(false);
     };
 
     const saveCurrentSession = async (newMessages: Message[], firstMessageContent: string) => {
@@ -296,7 +296,7 @@ export function GeminiChat({ onClose }: GeminiChatProps) {
                                         ? "bg-zinc-800 text-white rounded-tr-sm"
                                         : "bg-[#1a1a1c] text-zinc-100 rounded-tl-sm border border-white/5"
                                 )}>
-                                    {/* Added dir="rtl" to container for overall text alignment if mixed, 
+                                    {/* Added dir="rtl" to container for overall text alignment if mixed,
                                         but specifically using tailwind for text alignment */}
                                     <div className="prose prose-invert prose-sm max-w-none text-right" dir="auto">
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>

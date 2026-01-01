@@ -7,11 +7,11 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const dateString = searchParams.get('dateString');
-    
+
     if (!dateString) {
       return NextResponse.json({ error: 'dateString required' }, { status: 400 });
     }
-    
+
     const result = await db.select().from(parserTexts).where(eq(parserTexts.dateString, dateString)).limit(1);
     return NextResponse.json(result[0] || null);
   } catch (error) {
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { id, dateString, content } = body;
-    
+
     await db.insert(parserTexts).values({
       id: id || `parser-${dateString}`,
       dateString,
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       target: parserTexts.id,
       set: { content: content || '' },
     });
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error saving parser texts:', error);

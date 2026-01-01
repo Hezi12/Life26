@@ -121,7 +121,8 @@ export default function ComputerPage() {
               mergedCategories.push({
                 ...existing,
                 iconName: defaultCat.iconName,
-                color: defaultCat.color
+                color: defaultCat.color,
+                keywords: Array.from(new Set([...(existing.keywords || []), ...(defaultCat.keywords || [])]))
               });
             } else {
               mergedCategories.push(defaultCat);
@@ -652,6 +653,36 @@ export default function ComputerPage() {
     }
   }, [dateString, dailyNotes]);
 
+  const handleTypewriterScroll = useCallback(() => {
+    const textarea = dailyNotesRef.current;
+    if (!textarea) return;
+
+    const computedStyle = getComputedStyle(textarea);
+    const lineHeight = parseInt(computedStyle.lineHeight) || 24;
+    const cursorPosition = textarea.selectionStart;
+    const textBeforeCursor = textarea.value.substring(0, cursorPosition);
+    const lines = textBeforeCursor.split('\n').length;
+
+    const cursorY = lines * lineHeight;
+    const containerHeight = textarea.clientHeight;
+    const targetScrollTop = cursorY - (containerHeight / 2);
+
+    textarea.scrollTo({
+      top: targetScrollTop,
+      behavior: 'smooth'
+    });
+  }, []);
+
+  // Initial scroll to bottom
+  useEffect(() => {
+    if (dailyNotesRef.current) {
+      const textarea = dailyNotesRef.current;
+      textarea.selectionStart = textarea.value.length;
+      textarea.selectionEnd = textarea.value.length;
+      setTimeout(handleTypewriterScroll, 100);
+    }
+  }, [handleTypewriterScroll]);
+
   // Save sticky notes
   const saveStickyNotes = useCallback(async () => {
     if (typeof window === 'undefined' || isTypingRef.current) return;
@@ -974,12 +1005,16 @@ export default function ComputerPage() {
                 <textarea
                   ref={dailyNotesRef}
                   defaultValue={dailyNotes?.content || ''}
-                  onFocus={() => { isTypingRef.current = true; }}
-                  onBlur={() => { 
+                  onFocus={(e) => { 
+                    isTypingRef.current = true;
+                    handleTypewriterScroll();
+                  }}
+                  onInput={handleTypewriterScroll}
+                  onBlur={() => {
                     isTypingRef.current = false;
                     saveDailyNotes();
                   }}
-                  className="w-full h-full bg-transparent text-zinc-200 text-base leading-[1.8] p-0 resize-none outline-none placeholder:text-zinc-900 font-medium scrollbar-hide"
+                  className="w-full h-full bg-transparent text-zinc-200 text-base leading-[1.8] p-0 resize-none outline-none placeholder:text-zinc-900 font-medium scrollbar-hide pb-[50vh]"
                   placeholder="Initialize daily logging stream..."
                 />
               </div>

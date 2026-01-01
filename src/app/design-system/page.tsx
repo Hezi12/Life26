@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
-import { 
-  Check, 
-  X, 
-  Home, 
-  Settings, 
-  Activity, 
+import {
+  Check,
+  X,
+  Home,
+  Settings,
+  Activity,
   MoreVertical,
   Coffee,
   Code,
@@ -193,9 +193,9 @@ const TypographyRow = ({ label, text, isData = false }: { label: string; text: s
 
 const ColorSwatch = ({ color, label, border = false }: { color: string; label: string; border?: boolean }) => (
   <div className="flex flex-col items-center gap-2">
-    <div 
-      className={cn("w-12 h-12", border && "border border-zinc-800")} 
-      style={{ backgroundColor: color }} 
+    <div
+      className={cn("w-12 h-12", border && "border border-zinc-800")}
+      style={{ backgroundColor: color }}
     />
     <span className="text-[10px] text-zinc-500 font-mono uppercase">{label}</span>
     <span className="text-[10px] text-zinc-600 font-mono">{color}</span>
@@ -226,7 +226,7 @@ const TimelineIconA = ({ time, title, icon, active }: any) => (
 const TimelineIconB = ({ time, title, icon, active }: any) => (
   <div className="flex gap-4 group">
     <div className="flex flex-col items-center">
-      <div className={cn("w-6 h-6 rounded-sm flex items-center justify-center border transition-all", 
+      <div className={cn("w-6 h-6 rounded-sm flex items-center justify-center border transition-all",
         active ? "bg-zinc-800 border-zinc-600 text-white" : "border-zinc-900 text-zinc-600")}>
         {icon}
       </div>
@@ -308,7 +308,7 @@ const WritingA = ({ placeholder }: any) => (
     <div className="text-[10px] text-zinc-600 mb-1 uppercase tracking-tighter">Terminal_Input v1.0</div>
     <div className="border border-zinc-800 p-4 bg-black flex gap-3">
       <span className="text-orange-500">{">"}</span>
-      <textarea 
+      <textarea
         className="bg-transparent border-none outline-none text-white text-sm w-full h-24 resize-none font-mono"
         placeholder={placeholder}
       />
@@ -318,7 +318,7 @@ const WritingA = ({ placeholder }: any) => (
 
 const WritingB = ({ placeholder }: any) => (
   <div className="bg-zinc-900/40 rounded-sm border border-zinc-800 p-4 transition-all focus-within:border-zinc-600">
-    <textarea 
+    <textarea
       className="bg-transparent border-none outline-none text-white text-sm w-full h-24 resize-none"
       placeholder={placeholder}
     />
@@ -332,7 +332,7 @@ const WritingC = ({ placeholder }: any) => (
   <div className="relative group">
     <div className="absolute -right-1 top-0 bottom-0 w-[2px] bg-orange-600 group-focus-within:h-full h-1/3 transition-all duration-300" />
     <div className="bg-black p-4 shadow-[inset_0_0_20px_rgba(255,87,34,0.02)] border border-orange-500/10 focus-within:border-orange-500/30 transition-all">
-      <textarea 
+      <textarea
         className="bg-transparent border-none outline-none text-white text-lg font-bold italic w-full h-24 resize-none placeholder:text-zinc-800"
         placeholder={placeholder}
       />

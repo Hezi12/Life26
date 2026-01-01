@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { id, content } = body;
-    
+
     await db.insert(stickyNotes).values({
       id: id || 'sticky-1',
       content: content || '',
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       target: stickyNotes.id,
       set: { content: content || '' },
     });
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error saving sticky notes:', error);

@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { id, name, color, iconName, keywords } = body;
-    
+
     await db.insert(categories).values({
       id,
       name,
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       target: categories.id,
       set: { name, color, iconName, keywords: keywords || [] },
     });
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error saving category:', error);

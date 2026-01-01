@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { workMinutes, breakMinutes, soundsEnabled, workSound, breakSound } = body;
-    
+
     await db.insert(pomodoroSettings).values({
       id: 'default',
       workMinutes,
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       target: pomodoroSettings.id,
       set: { workMinutes, breakMinutes, soundsEnabled, workSound, breakSound },
     });
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error saving pomodoro settings:', error);

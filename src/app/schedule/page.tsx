@@ -1,20 +1,20 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { 
-  ChevronRight, 
-  ChevronLeft, 
-  Target, 
-  Settings, 
-  Plus, 
-  Briefcase, 
-  User, 
-  Dumbbell, 
-  Moon, 
-  Coffee, 
-  Zap, 
-  Book, 
-  Bed, 
+import {
+  ChevronRight,
+  ChevronLeft,
+  Target,
+  Settings,
+  Plus,
+  Briefcase,
+  User,
+  Dumbbell,
+  Moon,
+  Coffee,
+  Zap,
+  Book,
+  Bed,
   Camera,
   X,
   Check,
@@ -32,8 +32,8 @@ import {
   Activity,
   Circle,
   Monitor,
-  Calendar, 
-  List, 
+  Calendar,
+  List,
   Compass,
   Film,
   BookOpen
@@ -94,10 +94,10 @@ function DaySpine({ events, categories, currentDate }: DaySpineProps) {
       const event = events[i];
       const [hour, min] = event.time.split(':').map(Number);
       const startMinutes = hour * 60 + min;
-      
+
       let endMinutes: number;
       const nextEvent = events[i + 1];
-      
+
       if (!nextEvent) {
         endMinutes = startMinutes >= 1320 ? 1440 : startMinutes + 30;
       } else {
@@ -108,7 +108,7 @@ function DaySpine({ events, categories, currentDate }: DaySpineProps) {
       const duration = endMinutes - startMinutes;
       const startPercent = (startMinutes / totalMinutesInDay) * 100;
       let heightPercent = Math.max(1, (duration / totalMinutesInDay) * 100);
-      
+
       const category = categories.find(c => c.id === event.categoryId) || defaultCategory;
 
       segmentsList.push({
@@ -141,8 +141,8 @@ function DaySpine({ events, categories, currentDate }: DaySpineProps) {
     <div className="w-14 h-full flex-shrink-0 border-l border-zinc-900 bg-black/40 backdrop-blur-sm overflow-hidden relative">
       {/* HOUR MARKERS */}
       {[...Array(25)].map((_, i) => (
-        <div 
-          key={i} 
+        <div
+          key={i}
           className="absolute right-0 left-0 border-t border-zinc-900/30"
           style={{ top: `${(i / 24) * 100}%` }}
         />
@@ -155,9 +155,9 @@ function DaySpine({ events, categories, currentDate }: DaySpineProps) {
         const isToday = now.getDate() === currentDate.getDate() &&
                         now.getMonth() === currentDate.getMonth() &&
                         now.getFullYear() === currentDate.getFullYear();
-        
+
         const isPast = isToday && segment.endMinutes <= (currentTimePercent / 100) * 1440;
-        const isCurrent = isToday && 
+        const isCurrent = isToday &&
                          segment.startMinutes <= (currentTimePercent / 100) * 1440 &&
                          segment.endMinutes > (currentTimePercent / 100) * 1440;
 
@@ -182,9 +182,9 @@ function DaySpine({ events, categories, currentDate }: DaySpineProps) {
             {isCurrent && (
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/20 to-transparent h-1/2 w-full -translate-y-full animate-scan opacity-30" />
             )}
-            
+
             {segment.heightPercent > 3 && (
-              <Icon 
+              <Icon
                 size={10}
                 className={cn(
                   "text-white/90 drop-shadow-[0_0_2px_rgba(0,0,0,0.8)] relative z-10",
@@ -218,7 +218,7 @@ export default function SchedulePage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isLoaded, setIsLoaded] = useState(false);
   const [viewMode, setViewMode] = useState<'daily' | 'monthly'>('daily');
-  
+
   // Initialize with defaults first
   const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
@@ -240,17 +240,17 @@ export default function SchedulePage() {
   // טעינה ראשונית - רק פעם אחת
   const loadInitialData = useCallback(async () => {
     if (typeof window === 'undefined') return;
-    
+
     try {
       const [eventsData, categoriesData] = await Promise.all([
         api.getEvents(),
         api.getCategories(),
       ]);
-      
+
       if (eventsData && Array.isArray(eventsData)) {
         setEvents(eventsData);
       }
-      
+
       if (categoriesData && Array.isArray(categoriesData) && categoriesData.length > 0) {
         const mergedCategories: Category[] = [];
         INITIAL_CATEGORIES.forEach(defaultCat => {
@@ -259,7 +259,8 @@ export default function SchedulePage() {
             mergedCategories.push({
               ...existing,
               iconName: defaultCat.iconName,
-              color: defaultCat.color
+              color: defaultCat.color,
+              keywords: Array.from(new Set([...(existing.keywords || []), ...(defaultCat.keywords || [])]))
             });
           } else {
             mergedCategories.push(defaultCat);
@@ -274,13 +275,13 @@ export default function SchedulePage() {
       } else {
         setCategories(INITIAL_CATEGORIES);
       }
-      
+
       // Load parser texts and photos from API
       const parserTextData = await api.getParserTexts(dateString);
       if (parserTextData) {
         setDailyParserTexts(prev => ({ ...prev, [dateString]: parserTextData.content || '' }));
       }
-      
+
       const photoData = await api.getPhotos(dateString);
       if (photoData) {
         setDailyPhotos(prev => ({ ...prev, [dateString]: photoData.photoData }));
@@ -293,7 +294,7 @@ export default function SchedulePage() {
   // Load from API after mount (client-side only)
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     const loadData = async () => {
       await loadInitialData();
       setIsLoaded(true);
@@ -307,7 +308,7 @@ export default function SchedulePage() {
     const handleSync = async (e: CustomEvent) => {
       // לא להגיב לאירועים מהדף עצמו
       if (e.detail?.source === 'schedule-page') return;
-      
+
       try {
         const eventsData = await api.getEvents();
         if (eventsData && Array.isArray(eventsData)) {
@@ -324,7 +325,7 @@ export default function SchedulePage() {
     };
 
     window.addEventListener('life26-update' as any, handleSync as any);
-    
+
     return () => {
       window.removeEventListener('life26-update' as any, handleSync as any);
     };
@@ -336,10 +337,10 @@ export default function SchedulePage() {
       // 1. טעינת כל האירועים הקיימים של היום מה-API
       const allEvents = await api.getEvents();
       const allExistingEvents = allEvents.filter(e => e.dateString === dateString);
-      
+
       console.log('📊 Existing events for today:', allExistingEvents.length);
       console.log('📝 New events to save:', newEvents.length);
-      
+
       // 2. הפרדה בין אירועים לעדכון, יצירה, ומחיקה
       const eventsToUpdate: Event[] = [];
       const eventsToCreate: Event[] = [];
@@ -409,17 +410,17 @@ export default function SchedulePage() {
       const refreshedEvents = await api.getEvents();
       const refreshedTodayEvents = refreshedEvents.filter(e => e.dateString === dateString);
       console.log('🔄 After operations - Events for today:', refreshedTodayEvents.length);
-      
+
       if (refreshedEvents && Array.isArray(refreshedEvents)) {
         setEvents(refreshedEvents);
       }
-      
+
       // 9. בניית parser text עם shortId מה-אירועים המעודכנים
       // זה חשוב כדי שבפעם הבאה שנפתח את המודל, נראה את ה-shortId
       const generateShortId = (fullId: string): string => {
         return fullId.slice(-6).toLowerCase();
       };
-      
+
       const parserTextWithShortId = refreshedTodayEvents
         .sort((a, b) => a.time.localeCompare(b.time))
         .map((e: Event) => {
@@ -427,25 +428,25 @@ export default function SchedulePage() {
           const timeStr = e.time.replace(':', '');
           return `[${shortId}] ${timeStr} ${e.title}`;
         }).join('\n');
-      
+
       // 10. שמירת parser text עם shortId
       await api.saveParserTexts({
         id: `parser-${dateString}`,
         dateString,
         content: parserTextWithShortId,
       });
-      
+
       // 11. עדכון dailyParserTexts עם הטקסט החדש (עם shortId)
-      setDailyParserTexts(prev => ({ 
-        ...prev, 
+      setDailyParserTexts(prev => ({
+        ...prev,
         [dateString]: parserTextWithShortId || ''
       }));
-      
+
       console.log('📝 Updated parser text for', dateString, ':', parserTextWithShortId || '(empty)');
 
       // 10. הודעה לדפים אחרים
-      window.dispatchEvent(new CustomEvent('life26-update', { 
-        detail: { type: 'events-updated', source: 'schedule-page' } 
+      window.dispatchEvent(new CustomEvent('life26-update', {
+        detail: { type: 'events-updated', source: 'schedule-page' }
       }));
 
       console.log('✅ All operations completed successfully');
@@ -512,7 +513,7 @@ export default function SchedulePage() {
 
   useEffect(() => {
     if (!isLoaded || typeof window === 'undefined') return;
-    
+
     // Save categories to API
     const saveCategories = async () => {
       try {
@@ -524,13 +525,13 @@ export default function SchedulePage() {
         // No fallback - API is required
       }
     };
-    
+
     saveCategories();
   }, [categories, isLoaded]);
 
   useEffect(() => {
     if (!isLoaded || typeof window === 'undefined') return;
-    
+
     // Save parser texts to API
     const saveParserTexts = async () => {
       try {
@@ -545,13 +546,13 @@ export default function SchedulePage() {
         console.error('Failed to save parser texts to API', error);
       }
     };
-    
+
     saveParserTexts();
   }, [dailyParserTexts, isLoaded]);
 
   useEffect(() => {
     if (!isLoaded || typeof window === 'undefined') return;
-    
+
     // Save photos to API
     const savePhotos = async () => {
       try {
@@ -566,7 +567,7 @@ export default function SchedulePage() {
         console.error('Failed to save photos to API', error);
       }
     };
-    
+
     savePhotos();
   }, [dailyPhotos, isLoaded]);
 
@@ -638,12 +639,12 @@ export default function SchedulePage() {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col bg-black text-white font-mono pt-safe" dir="rtl">
-      
+
       {/* Header - Aligned with Computer Page */}
       <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-4 sm:p-6 border-b border-zinc-900 bg-black/50 backdrop-blur-md shrink-0">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
           <h1 className="text-xl font-black italic tracking-[0.2em] text-white">DAILY OPS</h1>
-          
+
           <div className="flex items-center gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-lg">
             <button
               onClick={() => setCurrentDate(new Date(currentDate.setDate(currentDate.getDate() - 1)))}
@@ -673,7 +674,7 @@ export default function SchedulePage() {
 
         <div className="hidden md:flex items-center gap-6">
           <div className="flex items-center gap-1 bg-zinc-900/30 p-1 border border-zinc-800 rounded-sm">
-            <button 
+            <button
               onClick={() => setViewMode('daily')}
               className={cn(
                 "px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-sm transition-all",
@@ -682,7 +683,7 @@ export default function SchedulePage() {
             >
               Daily
             </button>
-            <button 
+            <button
               onClick={() => setViewMode('monthly')}
               className={cn(
                 "px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-sm transition-all",
@@ -692,15 +693,15 @@ export default function SchedulePage() {
               Monthly
             </button>
           </div>
-          
-          <button 
+
+          <button
             onClick={() => setIsParserOpen(true)}
             className="p-2 border border-zinc-800 hover:border-orange-500 hover:text-orange-500 text-zinc-500 rounded-sm transition-all group"
             title="הוסף אירוע"
           >
             <Plus size={18} className="group-hover:drop-shadow-[0_0_8px_currentColor]" />
           </button>
-          
+
           <button
             onClick={() => setIsCategoryModalOpen(true)}
             className="p-2 text-zinc-500 hover:text-orange-500 transition-all hover:scale-110"
@@ -712,7 +713,7 @@ export default function SchedulePage() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden bg-black">
-        
+
         {viewMode === 'daily' ? (
           <div className="flex-1 flex overflow-hidden">
             {/* 1. MAIN GRID (Daily View) - Mobile: column, Desktop: grid */}
@@ -739,11 +740,11 @@ export default function SchedulePage() {
                           <div key={event.id} data-event-index={index} className="relative pr-8 md:pr-6">
                             {/* Timeline Line */}
                             <div className="absolute right-[4px] md:right-0 top-0 bottom-0 w-[2px] md:w-px bg-zinc-900/50" />
-                            
+
                             <div className={cn(
                               "transition-all duration-500 group relative py-4 px-5 md:px-6 border rounded-xl md:rounded-sm flex items-center gap-4 md:gap-8 overflow-hidden",
-                              isCurrent 
-                                ? "bg-zinc-900/60 border-zinc-800 shadow-xl md:shadow-[0_0_25px_rgba(0,0,0,0.5)]" 
+                              isCurrent
+                                ? "bg-zinc-900/60 border-zinc-800 shadow-xl md:shadow-[0_0_25px_rgba(0,0,0,0.5)]"
                                 : "border-transparent bg-transparent hover:bg-zinc-900/20 hover:border-zinc-900/50"
                             )}>
                               {/* Active Indicator Background */}
@@ -757,19 +758,19 @@ export default function SchedulePage() {
                                 isCurrent ? "opacity-100" : "opacity-0 group-hover:opacity-40"
                               )}
                                 style={{ backgroundColor: category.color }} />
-                              
+
                               {/* Time & Icon Block */}
                               <div className="flex items-center gap-4 md:gap-5 shrink-0 min-w-[100px] md:min-w-[120px] relative z-10">
                                 <div className={cn(
                                   "p-2.5 md:p-3 rounded-lg md:rounded-sm border transition-all duration-500 bg-black shadow-sm md:shadow-inner relative",
                                   isCurrent ? "border-zinc-700 scale-105 md:scale-110" : "border-zinc-900 group-hover:border-zinc-700"
                                 )}
-                                  style={{ 
+                                  style={{
                                     color: category.color,
                                     ...(isCurrent && { boxShadow: `0 8px 20px ${category.color}15` })
                                   }}>
                                   <Icon size={18} strokeWidth={isCurrent ? 2.5 : 2} />
-                                  
+
                                   {/* Pulsing Dot Next to Icon */}
                                   {isCurrent && (
                                     <div className="absolute -top-1 -right-1 flex items-center justify-center">
@@ -787,7 +788,7 @@ export default function SchedulePage() {
                                   </span>
                                 </div>
                               </div>
-                              
+
                               {/* Title & Category Content */}
                               <div className="flex-1 flex flex-col justify-center overflow-hidden relative z-10">
                                 <div className={cn(
@@ -863,7 +864,7 @@ export default function SchedulePage() {
                     const activeCategories = categories.filter(cat => (categoryDurations[cat.id] || 0) > 0);
                     const noCategory = categories.find(c => c.id === "0");
                     const hasNoCategoryDuration = (categoryDurations["0"] || 0) > 0;
-                    
+
                     if (activeCategories.length === 0 && !hasNoCategoryDuration) {
                       return (
                         <div className="flex flex-col items-center justify-center flex-1 text-zinc-800 border border-dashed border-zinc-900 rounded-sm">
@@ -871,7 +872,7 @@ export default function SchedulePage() {
                         </div>
                       );
                     }
-                    
+
                     const allActive = [...activeCategories];
                     if (hasNoCategoryDuration && !allActive.some(c => c.id === "0")) {
                       if (noCategory) allActive.push(noCategory);
@@ -945,7 +946,7 @@ export default function SchedulePage() {
 
             {/* 2. DAY SPINE (Daily View only) - Mobile: hidden or simplified */}
             <div className="hidden md:block">
-              <DaySpine 
+              <DaySpine
                 events={dailyEvents}
                 categories={categories}
                 currentDate={currentDate}
@@ -963,12 +964,12 @@ export default function SchedulePage() {
       {/* Modals */}
       {isCategoryModalOpen && <CategoryModal categories={categories} onClose={() => setIsCategoryModalOpen(false)} onSave={setCategories} />}
       {isParserOpen && (
-        <ParserModal 
-          dateString={dateString} 
-          categories={categories} 
-          existingEvents={dailyEvents} 
-          initialText={dailyParserTexts[dateString] || ""} 
-          onClose={() => setIsParserOpen(false)} 
+        <ParserModal
+          dateString={dateString}
+          categories={categories}
+          existingEvents={dailyEvents}
+          initialText={dailyParserTexts[dateString] || ""}
+          onClose={() => setIsParserOpen(false)}
           onSave={async (newEvents: Event[], inputText: string) => {
             await handleAddEvents(newEvents, inputText);
             setIsParserOpen(false);
@@ -987,24 +988,24 @@ function MonthlyAnalytics({ events, categories, currentDate }: MonthlyAnalyticsP
     const days = [];
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-    
+
     const firstDay = new Date(year, month, 1);
-    const startOffset = firstDay.getDay(); 
+    const startOffset = firstDay.getDay();
     const startDate = new Date(firstDay);
     startDate.setDate(firstDay.getDate() - startOffset);
-    
+
     for (let i = 0; i < 42; i++) {
       const d = new Date(startDate);
       d.setDate(startDate.getDate() + i);
       const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      
+
       const dayEvents = events
         .filter(e => e.dateString === ds)
         .sort((a, b) => a.time.localeCompare(b.time));
-        
+
       const durations: Record<string, number> = {};
       categories.forEach(c => durations[c.id] = 0);
-      
+
       if (dayEvents.length > 0) {
         for (let j = 0; j < dayEvents.length - 1; j++) {
           const start = timeToMinutes(dayEvents[j].time);
@@ -1015,7 +1016,7 @@ function MonthlyAnalytics({ events, categories, currentDate }: MonthlyAnalyticsP
         const lastStart = timeToMinutes(last.time);
         if (lastStart >= 1320) durations[last.categoryId] += (1440 - lastStart);
       }
-      
+
       const totalMinutes = Object.values(durations).reduce((a, b) => a + b, 0);
       const sortedDayCats = Object.entries(durations)
         .filter(([_, mins]) => mins > 0)
@@ -1025,7 +1026,7 @@ function MonthlyAnalytics({ events, categories, currentDate }: MonthlyAnalyticsP
           category: categories.find(c => c.id === id) || categories[0],
           minutes: mins
         }));
-      
+
       days.push({
         date: d,
         dateString: ds,
@@ -1042,13 +1043,13 @@ function MonthlyAnalytics({ events, categories, currentDate }: MonthlyAnalyticsP
   const globalStats = useMemo(() => {
     const totals: Record<string, number> = {};
     categories.forEach(c => totals[c.id] = 0);
-    
+
     data.forEach(day => {
       Object.entries(day.durations).forEach(([id, mins]) => {
         totals[id] = (totals[id] || 0) + mins;
       });
     });
-    
+
     return Object.entries(totals)
       .map(([id, mins]) => ({
         category: categories.find(c => c.id === id) || categories[0],
@@ -1099,7 +1100,7 @@ function MonthlyAnalytics({ events, categories, currentDate }: MonthlyAnalyticsP
                   <div className="w-1.5 h-1.5 rounded-full bg-orange-500 shadow-[0_0_5px_#f97316]" />
                 )}
               </div>
-              
+
               {day.totalMinutes > 0 && day.isCurrentMonth && (
                 <div className="flex-1 flex flex-col gap-1.5">
                   <div className="bg-zinc-900/40 border border-zinc-800/50 p-1.5 rounded-sm flex flex-col items-center justify-center">
@@ -1139,7 +1140,7 @@ function MonthlyAnalytics({ events, categories, currentDate }: MonthlyAnalyticsP
                         <Activity size={16} className="text-orange-500 animate-pulse" />
                       </div>
                     </div>
-                    
+
                     <div className="flex-1 space-y-4 overflow-y-auto pr-2 scrollbar-hide">
                       {day.totalMinutes > 0 ? (
                         Object.entries(day.durations)
@@ -1161,7 +1162,7 @@ function MonthlyAnalytics({ events, categories, currentDate }: MonthlyAnalyticsP
                                   </div>
                                 </div>
                                 <div className="h-1.5 bg-zinc-900/80 w-full rounded-full overflow-hidden border border-zinc-800/30">
-                                  <div className="h-full transition-all duration-1000 ease-out" 
+                                  <div className="h-full transition-all duration-1000 ease-out"
                                        style={{ width: `${dayPercentage}%`, backgroundColor: cat?.color, boxShadow: `0 0 15px ${cat?.color}60` }} />
                                 </div>
                               </div>
@@ -1220,8 +1221,8 @@ function MonthlyAnalytics({ events, categories, currentDate }: MonthlyAnalyticsP
                   const currentOffset = offset;
                   offset -= dash;
                   return (
-                    <circle 
-                      key={s.category.id} 
+                    <circle
+                      key={s.category.id}
                       cx="50" cy="50" r="45" fill="none" stroke={s.category.color} strokeWidth="6"
                       strokeDasharray={`${dash} ${circumference}`} strokeDashoffset={currentOffset}
                       className="transition-all duration-1000" style={{ filter: `drop-shadow(0 0 4px ${s.category.color}40)` }}
@@ -1257,7 +1258,7 @@ function MonthlyAnalytics({ events, categories, currentDate }: MonthlyAnalyticsP
                     </div>
                   </div>
                   <div className="h-1.5 bg-zinc-900/50 w-full rounded-full overflow-hidden">
-                    <div className="h-full transition-all duration-1000" 
+                    <div className="h-full transition-all duration-1000"
                          style={{ width: `${percentage}%`, backgroundColor: s.category.color, boxShadow: `0 0 10px ${s.category.color}60` }} />
                   </div>
                 </div>
@@ -1355,7 +1356,7 @@ function CategoryModal({ categories, onClose, onSave }: any) {
                     <div className="space-y-6">
                       <div className="space-y-2">
                         <label className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.2em]">Category_Label</label>
-                        <input className="w-full bg-black border border-zinc-800 p-3 rounded-sm outline-none focus:border-orange-500/50 text-sm font-bold text-white transition-all" 
+                        <input className="w-full bg-black border border-zinc-800 p-3 rounded-sm outline-none focus:border-orange-500/50 text-sm font-bold text-white transition-all"
                           value={tempCategory.name || ""} onChange={e => setTempCategory({...tempCategory, name: e.target.value})} />
                       </div>
                       <div className="space-y-3">
@@ -1363,7 +1364,7 @@ function CategoryModal({ categories, onClose, onSave }: any) {
                         <div className="grid grid-cols-8 gap-2">
                           {AVAILABLE_ICONS.map(iconName => {
                             const IconComp = ICON_MAP[iconName];
-                            return <button key={iconName} onClick={() => setTempCategory({...tempCategory, iconName})} 
+                            return <button key={iconName} onClick={() => setTempCategory({...tempCategory, iconName})}
                               className={cn("p-2 rounded-sm border transition-all flex items-center justify-center", tempCategory.iconName === iconName ? "bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]" : "bg-zinc-900 border-zinc-800 text-zinc-600 hover:text-white")}><IconComp size={16} /></button>
                           })}
                         </div>

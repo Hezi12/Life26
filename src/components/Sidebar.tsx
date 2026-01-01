@@ -40,7 +40,28 @@ const Sidebar = () => {
       try {
         const categoriesData = await api.getCategories();
         if (categoriesData && categoriesData.length > 0) {
-          setCategories(categoriesData);
+          const mergedCategories: Category[] = [];
+          INITIAL_CATEGORIES.forEach(defaultCat => {
+            const existing = categoriesData.find((c: Category) => c.id === defaultCat.id);
+            if (existing) {
+              mergedCategories.push({
+                ...existing,
+                iconName: defaultCat.iconName,
+                color: defaultCat.color,
+                keywords: Array.from(new Set([...(existing.keywords || []), ...(defaultCat.keywords || [])]))
+              });
+            } else {
+              mergedCategories.push(defaultCat);
+            }
+          });
+          categoriesData.forEach((cat: Category) => {
+            if (!INITIAL_CATEGORIES.some(dc => dc.id === cat.id)) {
+              mergedCategories.push(cat);
+            }
+          });
+          setCategories(mergedCategories);
+        } else {
+          setCategories(INITIAL_CATEGORIES);
         }
 
         const allEvents = await api.getEvents();
