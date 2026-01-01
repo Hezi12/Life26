@@ -112,5 +112,6 @@ export const INITIAL_CATEGORIES: Category[] = [
   { id: "10", name: "ניקיון", color: "#fafafa", iconName: "Brush", keywords: ["לרוטשילד", "לאור יהודה", "ניקיון", "מצעים"] },
   { id: "11", name: "דת", color: "#f97316", iconName: "BookOpen", keywords: ["תפילין", "שחרית", "מנחה", "מעריב", "ערבית", "לימוד"] },
   { id: "12", name: "צפייה", color: "#0ea5e9", iconName: "Film", keywords: ["צפייה", "סרט", "נטפליקס", "סדרה", "יוטיוב"] },
+  { id: "13", name: "רגיעה", color: "#ef4444", iconName: "Sparkles", keywords: ["רגיעה", "פו", "סשן"] },
 ];
 
