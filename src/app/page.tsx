@@ -19,7 +19,8 @@ import {
   Check,
   Zap,
   Shield,
-  BarChart3
+  BarChart3,
+  Circle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { 
@@ -79,6 +80,8 @@ export default function HomePage() {
   const [newTopicSubjectId, setNewTopicSubjectId] = useState('');
   const [newStartTime, setNewStartTime] = useState('');
   const [newEndTime, setNewEndTime] = useState('');
+  const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
+  const [selectedEventForCategory, setSelectedEventForCategory] = useState<Event | null>(null);
 
   const dailyNotesRef = useRef<HTMLTextAreaElement>(null);
   const stickyNotesRef = useRef<HTMLTextAreaElement>(null);
@@ -722,7 +725,20 @@ export default function HomePage() {
                                       boxShadow: `0 4px 10px ${categories.find(c => c.id === timelineData.current?.categoryId)?.color}40`
                                     }} 
                                   />
-                                  <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">
+                                  <span 
+                                    onClick={(e) => {
+                                      const currentCategory = categories.find(c => c.id === timelineData.current?.categoryId);
+                                      if (currentCategory?.id === "0" && timelineData.current) {
+                                        e.stopPropagation();
+                                        setSelectedEventForCategory(timelineData.current);
+                                        setIsCategoryPickerOpen(true);
+                                      }
+                                    }}
+                                    className={cn(
+                                      "text-[9px] font-black text-zinc-500 uppercase tracking-widest",
+                                      categories.find(c => c.id === timelineData.current?.categoryId)?.id === "0" && "cursor-pointer hover:underline"
+                                    )}
+                                  >
                                     {categories.find(c => c.id === timelineData.current?.categoryId)?.name || 'General'}
                                   </span>
                                 </div>
@@ -755,7 +771,21 @@ export default function HomePage() {
                                   <div className="text-xs sm:text-[14px] font-black text-zinc-300 uppercase leading-tight tracking-tight group-hover/item:text-white transition-colors">
                                     {event.title.split(':')[0]}
                                   </div>
-                                  <div className="text-[6px] sm:text-[7px] font-black text-zinc-700 uppercase tracking-[0.2em]">{category?.name}</div>
+                                  <div 
+                                    onClick={(e) => {
+                                      if (category?.id === "0" && event) {
+                                        e.stopPropagation();
+                                        setSelectedEventForCategory(event);
+                                        setIsCategoryPickerOpen(true);
+                                      }
+                                    }}
+                                    className={cn(
+                                      "text-[6px] sm:text-[7px] font-black text-zinc-700 uppercase tracking-[0.2em]",
+                                      category?.id === "0" && "cursor-pointer hover:underline"
+                                    )}
+                                  >
+                                    {category?.name}
+                                  </div>
                                 </div>
 
                                 <div 
@@ -848,6 +878,64 @@ export default function HomePage() {
           </div>
         </>
       )}
+
+      {/* Category Picker Modal */}
+      {isCategoryPickerOpen && selectedEventForCategory && (
+        <CategoryPickerModal
+          categories={categories}
+          event={selectedEventForCategory}
+          onClose={() => {
+            setIsCategoryPickerOpen(false);
+            setSelectedEventForCategory(null);
+          }}
+          onSelect={async (categoryId: string) => {
+            const updatedEvent = { ...selectedEventForCategory, categoryId };
+            await api.saveEvent(updatedEvent);
+            const refreshedEvents = await api.getEvents();
+            if (refreshedEvents && Array.isArray(refreshedEvents)) {
+              setEvents(refreshedEvents);
+            }
+            setIsCategoryPickerOpen(false);
+            setSelectedEventForCategory(null);
+            window.dispatchEvent(new CustomEvent('life26-update', {
+              detail: { type: 'events-updated', source: 'dashboard-page' }
+            }));
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// Category Picker Modal Component
+function CategoryPickerModal({ categories, event, onClose, onSelect }: { categories: Category[], event: Event, onClose: () => void, onSelect: (categoryId: string) => void }) {
+  return (
+    <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4" dir="rtl" onClick={onClose}>
+      <div className="bg-[#0a0a0a] border border-zinc-800 w-full max-w-md max-h-[80vh] flex flex-col rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="p-6 border-b border-zinc-900 flex justify-between items-center bg-zinc-900/20">
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500 italic">Select_Category</div>
+            <div className="text-sm text-zinc-400 mt-1">{event.title}</div>
+          </div>
+          <button onClick={onClose} className="text-zinc-600 hover:text-white transition-colors"><X size={20} /></button>
+        </div>
+        <div className="p-6 overflow-y-auto flex-1 space-y-2 scrollbar-hide">
+          {categories.filter(c => c.id !== "0").map(cat => {
+            const Icon = ICON_MAP[cat.iconName] || Circle;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => onSelect(cat.id)}
+                className="w-full flex items-center gap-4 p-4 border border-zinc-900 bg-white/[0.01] rounded-sm overflow-hidden transition-all hover:bg-white/[0.03] hover:border-zinc-800 group"
+              >
+                <div className="w-1 h-6 shadow-[0_0_8px_currentColor]" style={{ backgroundColor: cat.color, color: cat.color }} />
+                <div className="p-2 rounded-sm bg-black border border-zinc-800" style={{ color: cat.color }}><Icon size={16} /></div>
+                <span className="text-sm font-black text-zinc-300 uppercase tracking-widest flex-1 text-right">{cat.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

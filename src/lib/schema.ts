@@ -118,7 +118,6 @@ export const focusSessions = pgTable('focus_sessions', {
   sessionNumber: integer('session_number'),
   startTime: timestamp('start_time').notNull(),
   endTime: timestamp('end_time'),
-  durationMinutes: integer('duration_minutes'),
   notes: text('notes'),
   aiSummary: text('ai_summary'),
   aiAffirmation: text('ai_affirmation'),

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Play, History, Settings, Check, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 // Types
 interface FocusSession {
@@ -10,7 +11,6 @@ interface FocusSession {
   sessionNumber: number;
   startTime: string;
   endTime: string | null;
-  durationMinutes: number | null;
   notes: string | null;
   aiSummary: string | null;
   aiAffirmation: string | null;
@@ -19,7 +19,7 @@ interface FocusSession {
 }
 
 export default function FocusPage() {
-  const [view, setView] = useState<'dashboard' | 'active' | 'summary' | 'history' | 'settings'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'active' | 'summary' | 'settings'>('dashboard');
   const [history, setHistory] = useState<FocusSession[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -72,9 +72,6 @@ export default function FocusPage() {
   const [reviewData, setReviewData] = useState<{ summary: string, affirmation: string } | null>(null);
   const [nextPlan, setNextPlan] = useState<string>("");
 
-  // History Edit State
-  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
-  const [editStartTime, setEditStartTime] = useState<string>("");
 
   // UI Effects State
   const [isMouseOver, setIsMouseOver] = useState(true);
@@ -146,7 +143,6 @@ export default function FocusPage() {
     
     const finalReviewData = manualReviewData || reviewData;
     const endTime = new Date();
-    const durationMinutes = Math.floor(elapsed / 60);
 
     const [h, m] = nextPlan.split(':').map(Number);
     const planDate = new Date();
@@ -161,7 +157,6 @@ export default function FocusPage() {
       sessionNumber: history.length + 1,
       startTime: startTime.toISOString(),
       endTime: endTime.toISOString(),
-      durationMinutes,
       notes,
       aiSummary: finalReviewData?.summary,
       aiAffirmation: finalReviewData?.affirmation,
@@ -181,33 +176,6 @@ export default function FocusPage() {
     }
   };
 
-  const updateSessionStartTime = async (id: string) => {
-    if (!editStartTime) return;
-    setIsLoading(true);
-
-    try {
-      const session = history.find(s => s.id === id);
-      if (!session) return;
-
-      const newStartDate = new Date(session.startTime);
-      const [h, m] = editStartTime.split(':').map(Number);
-      newStartDate.setHours(h);
-      newStartDate.setMinutes(m);
-
-      await fetch('/api/focus/session', {
-        method: 'PATCH',
-        body: JSON.stringify({ id, startTime: newStartDate.toISOString() }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      setEditingSessionId(null);
-      await fetchHistory();
-    } catch (e) {
-      console.error("Update Error", e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const resetHistory = async () => {
     if (!confirm('Clear all focus history?')) return;
@@ -224,14 +192,14 @@ export default function FocusPage() {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col bg-black text-white selection:bg-orange-500/30" dir="rtl">
-      {/* Zen Header - Only on Dashboard/History/Settings */}
+      {/* Zen Header - Only on Dashboard/Settings */}
       {view !== 'active' && view !== 'summary' && (
         <header className="p-8 flex justify-between items-center bg-transparent z-10 relative">
           <h1 className="text-sm font-light tracking-[0.4em] text-zinc-500 uppercase">&nbsp;</h1>
           <div className="flex items-center gap-6">
-            <button onClick={() => setView('history')} className="text-zinc-500 hover:text-white transition-colors duration-500">
+            <Link href="/focus/history" className="text-zinc-500 hover:text-white transition-colors duration-500">
               <History size={18} strokeWidth={1} />
-            </button>
+            </Link>
             <button onClick={() => setView('settings')} className="text-zinc-500 hover:text-white transition-colors duration-500">
               <Settings size={18} strokeWidth={1} />
             </button>
@@ -360,66 +328,6 @@ export default function FocusPage() {
           </div>
         )}
 
-        {/* VIEW: HISTORY */}
-        {view === 'history' && (
-          <div className="max-w-3xl mx-auto w-full animate-in fade-in slide-in-from-right-4 duration-700">
-            <div className="flex items-center justify-between mb-16 px-4">
-              <h2 className="text-sm tracking-[0.4em] text-zinc-500 uppercase">יומן מיקוד</h2>
-              <button onClick={() => setView('dashboard')} className="text-zinc-600 hover:text-white transition-colors"><X size={18} strokeWidth={1} /></button>
-            </div>
-
-            <div className="space-y-1">
-              {history.map((session) => (
-                <div key={session.id} className="group p-6 hover:bg-zinc-900/20 transition-all rounded-lg flex items-center justify-between">
-                  <div className="flex items-center gap-8">
-                    <div className="text-[10px] font-mono text-zinc-700 uppercase tracking-widest">#{session.sessionNumber}</div>
-                    <div>
-                      <div className="text-sm text-zinc-300 font-light">{new Date(session.startTime).toLocaleDateString()}</div>
-                      <div className="flex items-center gap-2 mt-1">
-                        {editingSessionId === session.id ? (
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="time"
-                              value={editStartTime}
-                              onChange={(e) => setEditStartTime(e.target.value)}
-                              className="bg-zinc-800 text-white text-[10px] font-mono p-1 rounded outline-none"
-                            />
-                            <button 
-                              onClick={() => updateSessionStartTime(session.id)}
-                              className="text-[10px] text-green-500 hover:text-green-400 font-bold uppercase"
-                            >
-                              שמור
-                            </button>
-                            <button 
-                              onClick={() => setEditingSessionId(null)}
-                              className="text-[10px] text-zinc-500 hover:text-white font-bold uppercase"
-                            >
-                              ביטול
-                            </button>
-                          </div>
-                        ) : (
-                          <div 
-                            className="text-[10px] text-zinc-600 uppercase tracking-widest cursor-pointer hover:text-zinc-400 transition-colors flex items-center gap-2"
-                            onClick={() => {
-                              setEditingSessionId(session.id);
-                              const date = new Date(session.startTime);
-                              setEditStartTime(`${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`);
-                            }}
-                          >
-                            {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {session.durationMinutes} דקות
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="max-w-[300px] text-zinc-500 text-xs truncate opacity-0 group-hover:opacity-100 transition-opacity">
-                    {session.aiSummary}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* VIEW: SETTINGS */}
         {view === 'settings' && (

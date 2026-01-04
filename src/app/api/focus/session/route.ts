@@ -21,7 +21,7 @@ export async function GET() {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { id, sessionNumber, startTime, endTime, durationMinutes, notes, aiSummary, aiAffirmation, nextSessionPlan, status } = body;
+        const { id, sessionNumber, startTime, endTime, notes, aiSummary, aiAffirmation, nextSessionPlan, status } = body;
 
         // Insert new session
         await db.insert(focusSessions).values({
@@ -29,7 +29,6 @@ export async function POST(req: Request) {
             sessionNumber,
             startTime: new Date(startTime),
             endTime: endTime ? new Date(endTime) : null,
-            durationMinutes,
             notes,
             aiSummary,
             aiAffirmation,

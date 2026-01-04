@@ -227,6 +227,8 @@ export default function SchedulePage() {
 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isParserOpen, setIsParserOpen] = useState(false);
+  const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
+  const [selectedEventForCategory, setSelectedEventForCategory] = useState<Event | null>(null);
   const timelineScrollRef = useRef<HTMLDivElement>(null);
 
   const dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
@@ -332,7 +334,7 @@ export default function SchedulePage() {
   }, [currentDate]);
 
   // ✅ פונקציית שמירה מרכזית - נקראת רק באופן מפורש
-  const handleAddEvents = async (newEvents: Event[], inputText: string) => {
+  const handleAddEvents = async (newEvents: Event[], inputText: string, workTopics?: any[], workSubjects?: any[]) => {
     try {
       // 1. טעינת כל האירועים הקיימים של היום מה-API
       const allEvents = await api.getEvents();
@@ -429,14 +431,28 @@ export default function SchedulePage() {
           return `[${shortId}] ${timeStr} ${e.title}`;
         }).join('\n');
 
-      // 10. שמירת parser text עם shortId
+      // 10. יצירת work subjects אם קיימים
+      if (workSubjects && workSubjects.length > 0) {
+        for (const subject of workSubjects) {
+          await api.saveWorkSubject(subject);
+        }
+      }
+
+      // 11. יצירת work topics אם קיימים
+      if (workTopics && workTopics.length > 0) {
+        for (const topic of workTopics) {
+          await api.saveWorkTopic(topic);
+        }
+      }
+
+      // 12. שמירת parser text עם shortId
       await api.saveParserTexts({
         id: `parser-${dateString}`,
         dateString,
         content: parserTextWithShortId,
       });
 
-      // 11. עדכון dailyParserTexts עם הטקסט החדש (עם shortId)
+      // 13. עדכון dailyParserTexts עם הטקסט החדש (עם shortId)
       setDailyParserTexts(prev => ({
         ...prev,
         [dateString]: parserTextWithShortId || ''
@@ -444,7 +460,7 @@ export default function SchedulePage() {
 
       console.log('📝 Updated parser text for', dateString, ':', parserTextWithShortId || '(empty)');
 
-      // 10. הודעה לדפים אחרים
+      // 14. הודעה לדפים אחרים
       window.dispatchEvent(new CustomEvent('life26-update', {
         detail: { type: 'events-updated', source: 'schedule-page' }
       }));
@@ -791,10 +807,19 @@ export default function SchedulePage() {
 
                               {/* Title & Category Content */}
                               <div className="flex-1 flex flex-col justify-center overflow-hidden relative z-10">
-                                <div className={cn(
-                                  "text-[9px] md:text-[10px] font-bold md:font-black uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1 transition-opacity",
-                                  isCurrent ? "opacity-100" : "opacity-50 group-hover:opacity-100"
-                                )}
+                                <div 
+                                  onClick={(e) => {
+                                    if (category.id === "0") {
+                                      e.stopPropagation();
+                                      setSelectedEventForCategory(event);
+                                      setIsCategoryPickerOpen(true);
+                                    }
+                                  }}
+                                  className={cn(
+                                    "text-[9px] md:text-[10px] font-bold md:font-black uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1 transition-opacity",
+                                    isCurrent ? "opacity-100" : "opacity-50 group-hover:opacity-100",
+                                    category.id === "0" && "cursor-pointer hover:opacity-100 hover:underline"
+                                  )}
                                   style={{ color: category.color }}>
                                   {category.name}
                                 </div>
@@ -963,6 +988,29 @@ export default function SchedulePage() {
 
       {/* Modals */}
       {isCategoryModalOpen && <CategoryModal categories={categories} onClose={() => setIsCategoryModalOpen(false)} onSave={setCategories} />}
+      {isCategoryPickerOpen && selectedEventForCategory && (
+        <CategoryPickerModal
+          categories={categories}
+          event={selectedEventForCategory}
+          onClose={() => {
+            setIsCategoryPickerOpen(false);
+            setSelectedEventForCategory(null);
+          }}
+          onSelect={async (categoryId: string) => {
+            const updatedEvent = { ...selectedEventForCategory, categoryId };
+            await api.saveEvent(updatedEvent);
+            const refreshedEvents = await api.getEvents();
+            if (refreshedEvents && Array.isArray(refreshedEvents)) {
+              setEvents(refreshedEvents);
+            }
+            setIsCategoryPickerOpen(false);
+            setSelectedEventForCategory(null);
+            window.dispatchEvent(new CustomEvent('life26-update', {
+              detail: { type: 'events-updated', source: 'schedule-page' }
+            }));
+          }}
+        />
+      )}
       {isParserOpen && (
         <ParserModal
           dateString={dateString}
@@ -970,8 +1018,8 @@ export default function SchedulePage() {
           existingEvents={dailyEvents}
           initialText={dailyParserTexts[dateString] || ""}
           onClose={() => setIsParserOpen(false)}
-          onSave={async (newEvents: Event[], inputText: string) => {
-            await handleAddEvents(newEvents, inputText);
+          onSave={async (newEvents: Event[], inputText: string, workTopics?: any[], workSubjects?: any[]) => {
+            await handleAddEvents(newEvents, inputText, workTopics, workSubjects);
             setIsParserOpen(false);
           }}
         />
@@ -1293,6 +1341,39 @@ function MonthlyAnalytics({ events, categories, currentDate }: MonthlyAnalyticsP
     </div>
   );
 }
+// Category Picker Modal for selecting category for an event
+function CategoryPickerModal({ categories, event, onClose, onSelect }: { categories: Category[], event: Event, onClose: () => void, onSelect: (categoryId: string) => void }) {
+  return (
+    <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4" dir="rtl" onClick={onClose}>
+      <div className="bg-[#0a0a0a] border border-zinc-800 w-full max-w-md max-h-[80vh] flex flex-col rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="p-6 border-b border-zinc-900 flex justify-between items-center bg-zinc-900/20">
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500 italic">Select_Category</div>
+            <div className="text-sm text-zinc-400 mt-1">{event.title}</div>
+          </div>
+          <button onClick={onClose} className="text-zinc-600 hover:text-white transition-colors"><X size={20} /></button>
+        </div>
+        <div className="p-6 overflow-y-auto flex-1 space-y-2 scrollbar-hide">
+          {categories.filter(c => c.id !== "0").map(cat => {
+            const Icon = ICON_MAP[cat.iconName] || Circle;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => onSelect(cat.id)}
+                className="w-full flex items-center gap-4 p-4 border border-zinc-900 bg-white/[0.01] rounded-sm overflow-hidden transition-all hover:bg-white/[0.03] hover:border-zinc-800 group"
+              >
+                <div className="w-1 h-6 shadow-[0_0_8px_currentColor]" style={{ backgroundColor: cat.color, color: cat.color }} />
+                <div className="p-2 rounded-sm bg-black border border-zinc-800" style={{ color: cat.color }}><Icon size={16} /></div>
+                <span className="text-sm font-black text-zinc-300 uppercase tracking-widest flex-1 text-right">{cat.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CategoryModal({ categories, onClose, onSave }: any) {
   const [localCategories, setLocalCategories] = useState<Category[]>(categories);
   const [expandedId, setExpandedId] = useState<string | null>(null);

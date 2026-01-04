@@ -103,7 +103,7 @@ const Sidebar = () => {
     }
   };
 
-  const handleSave = async (newEvents: Event[], rawText: string) => {
+  const handleSave = async (newEvents: Event[], rawText: string, workTopics?: any[], workSubjects?: any[]) => {
     try {
       // 1. טעינת כל האירועים הקיימים של היום מה-API
       const allEvents = await api.getEvents();
@@ -145,7 +145,21 @@ const Sidebar = () => {
         await api.saveEvent(eventToCreate);
       }
 
-      // 7. שמירת parser text
+      // 7. יצירת work subjects אם קיימים
+      if (workSubjects && workSubjects.length > 0) {
+        for (const subject of workSubjects) {
+          await api.saveWorkSubject(subject);
+        }
+      }
+
+      // 8. יצירת work topics אם קיימים
+      if (workTopics && workTopics.length > 0) {
+        for (const topic of workTopics) {
+          await api.saveWorkTopic(topic);
+        }
+      }
+
+      // 9. שמירת parser text
       await api.saveParserTexts({
         id: `parser-${dateString}`,
         dateString,
