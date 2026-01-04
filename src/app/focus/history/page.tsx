@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, X, Edit2, Loader2 } from "lucide-react";
+import { ChevronLeft, X, Edit2, Loader2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -25,6 +25,9 @@ export default function FocusHistoryPage() {
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editDate, setEditDate] = useState<string>("");
   const [editTime, setEditTime] = useState<string>("");
+  const [editingNextSessionPlanId, setEditingNextSessionPlanId] = useState<string | null>(null);
+  const [editNextSessionDate, setEditNextSessionDate] = useState<string>("");
+  const [editNextSessionTime, setEditNextSessionTime] = useState<string>("");
 
   useEffect(() => {
     fetchSessions();
@@ -85,6 +88,83 @@ export default function FocusHistoryPage() {
     setEditingSessionId(null);
     setEditDate("");
     setEditTime("");
+  };
+
+  const updateNextSessionPlan = async (id: string) => {
+    if (!editNextSessionDate || !editNextSessionTime) return;
+    setIsLoading(true);
+
+    try {
+      const [year, month, day] = editNextSessionDate.split('-').map(Number);
+      const [hours, minutes] = editNextSessionTime.split(':').map(Number);
+      
+      const newNextSessionDate = new Date(year, month - 1, day, hours, minutes);
+
+      const res = await fetch('/api/focus/session', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, nextSessionPlan: newNextSessionDate.toISOString() }),
+      });
+
+      if (res.ok) {
+        await fetchSessions();
+        setEditingNextSessionPlanId(null);
+        if (selectedSession?.id === id) {
+          const updated = await fetch(`/api/focus/session`).then(r => r.json());
+          const updatedSession = updated.find((s: FocusSession) => s.id === id);
+          if (updatedSession) setSelectedSession(updatedSession);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to update next session plan", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const startEditingNextSessionPlan = (session: FocusSession) => {
+    setEditingNextSessionPlanId(session.id);
+    if (session.nextSessionPlan) {
+      const date = new Date(session.nextSessionPlan);
+      setEditNextSessionDate(date.toISOString().split('T')[0]);
+      setEditNextSessionTime(`${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`);
+    } else {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      setEditNextSessionDate(tomorrow.toISOString().split('T')[0]);
+      setEditNextSessionTime('08:00');
+    }
+  };
+
+  const cancelEditingNextSessionPlan = () => {
+    setEditingNextSessionPlanId(null);
+    setEditNextSessionDate("");
+    setEditNextSessionTime("");
+  };
+
+  const deleteSession = async (id: string) => {
+    if (!confirm('האם אתה בטוח שברצונך למחוק את המיקוד הזה?')) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/focus/session?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        await fetchSessions();
+        if (selectedSession?.id === id) {
+          setSelectedSession(null);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to delete session", e);
+      alert('שגיאה במחיקת המיקוד');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -353,23 +433,98 @@ export default function FocusHistoryPage() {
                 </div>
               )}
 
+              {/* Delete Button */}
+              <div className="pt-6 border-t border-zinc-900">
+                <button
+                  onClick={() => deleteSession(selectedSession.id)}
+                  disabled={isLoading}
+                  className="w-full px-4 py-3 bg-red-950/30 border border-red-900/50 text-red-400 hover:text-red-300 hover:border-red-800 text-[10px] font-black uppercase tracking-widest rounded transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isLoading ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <>
+                      <Trash2 size={14} />
+                      מחק מיקוד
+                    </>
+                  )}
+                </button>
+              </div>
+
               {/* Next Session Plan */}
-              {selectedSession.nextSessionPlan && (
-                <div className="space-y-3 pt-4 border-t border-zinc-900">
-                  <div className="text-[9px] text-zinc-600 uppercase tracking-widest">
-                    Next Session Planned
+              <div className="space-y-3 pt-4 border-t border-zinc-900">
+                {editingNextSessionPlanId === selectedSession.id ? (
+                  <div className="space-y-3">
+                    <div className="text-[9px] text-zinc-600 uppercase tracking-widest">
+                      Next Session Planned
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <input
+                          type="date"
+                          value={editNextSessionDate}
+                          onChange={(e) => setEditNextSessionDate(e.target.value)}
+                          className="w-full bg-zinc-900 border border-zinc-800 text-white text-sm font-mono p-2 rounded outline-none focus:border-orange-500"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <input
+                          type="time"
+                          value={editNextSessionTime}
+                          onChange={(e) => setEditNextSessionTime(e.target.value)}
+                          className="w-full bg-zinc-900 border border-zinc-800 text-white text-sm font-mono p-2 rounded outline-none focus:border-orange-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => updateNextSessionPlan(selectedSession.id)}
+                        disabled={isLoading}
+                        className="flex-1 px-4 py-2 bg-orange-500 text-black text-[10px] font-black uppercase tracking-widest rounded hover:bg-orange-400 transition-all disabled:opacity-50"
+                      >
+                        {isLoading ? (
+                          <Loader2 size={14} className="animate-spin mx-auto" />
+                        ) : (
+                          "שמור"
+                        )}
+                      </button>
+                      <button
+                        onClick={cancelEditingNextSessionPlan}
+                        className="px-4 py-2 bg-zinc-800 text-zinc-400 text-[10px] font-black uppercase tracking-widest rounded hover:bg-zinc-700 transition-all"
+                      >
+                        ביטול
+                      </button>
+                    </div>
                   </div>
-                  <div className="text-sm font-mono text-zinc-400">
-                    {new Date(selectedSession.nextSessionPlan).toLocaleString('he-IL', {
-                      weekday: 'short',
-                      day: 'numeric',
-                      month: 'short',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <div className="text-[9px] text-zinc-600 uppercase tracking-widest mb-1">
+                        Next Session Planned
+                      </div>
+                      <div className="text-sm font-mono text-zinc-400">
+                        {selectedSession.nextSessionPlan ? (
+                          new Date(selectedSession.nextSessionPlan).toLocaleString('he-IL', {
+                            weekday: 'short',
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })
+                        ) : (
+                          <span className="text-zinc-600">לא נקבע</span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => startEditingNextSessionPlan(selectedSession)}
+                      className="p-1.5 text-zinc-600 hover:text-orange-500 transition-all"
+                    >
+                      <Edit2 size={14} />
+                    </button>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
             </div>
           </div>
@@ -481,6 +636,98 @@ export default function FocusHistoryPage() {
                   </p>
                 </div>
               )}
+              {/* Delete Button - Mobile */}
+              <div className="pt-6 border-t border-zinc-900">
+                <button
+                  onClick={() => deleteSession(selectedSession.id)}
+                  disabled={isLoading}
+                  className="w-full px-4 py-3 bg-red-950/30 border border-red-900/50 text-red-400 hover:text-red-300 hover:border-red-800 text-[10px] font-black uppercase tracking-widest rounded transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isLoading ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <>
+                      <Trash2 size={14} />
+                      מחק מיקוד
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Next Session Plan - Mobile */}
+              <div className="space-y-3 pt-4 border-t border-zinc-900">
+                {editingNextSessionPlanId === selectedSession.id ? (
+                  <div className="space-y-3">
+                    <div className="text-[9px] text-zinc-600 uppercase tracking-widest">
+                      Next Session Planned
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <input
+                          type="date"
+                          value={editNextSessionDate}
+                          onChange={(e) => setEditNextSessionDate(e.target.value)}
+                          className="w-full bg-zinc-900 border border-zinc-800 text-white text-sm font-mono p-2 rounded outline-none focus:border-orange-500"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <input
+                          type="time"
+                          value={editNextSessionTime}
+                          onChange={(e) => setEditNextSessionTime(e.target.value)}
+                          className="w-full bg-zinc-900 border border-zinc-800 text-white text-sm font-mono p-2 rounded outline-none focus:border-orange-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => updateNextSessionPlan(selectedSession.id)}
+                        disabled={isLoading}
+                        className="flex-1 px-4 py-2 bg-orange-500 text-black text-[10px] font-black uppercase tracking-widest rounded hover:bg-orange-400 transition-all disabled:opacity-50"
+                      >
+                        {isLoading ? (
+                          <Loader2 size={14} className="animate-spin mx-auto" />
+                        ) : (
+                          "שמור"
+                        )}
+                      </button>
+                      <button
+                        onClick={cancelEditingNextSessionPlan}
+                        className="px-4 py-2 bg-zinc-800 text-zinc-400 text-[10px] font-black uppercase tracking-widest rounded hover:bg-zinc-700 transition-all"
+                      >
+                        ביטול
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <div className="text-[9px] text-zinc-600 uppercase tracking-widest mb-1">
+                        Next Session Planned
+                      </div>
+                      <div className="text-sm font-mono text-zinc-400">
+                        {selectedSession.nextSessionPlan ? (
+                          new Date(selectedSession.nextSessionPlan).toLocaleString('he-IL', {
+                            weekday: 'short',
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })
+                        ) : (
+                          <span className="text-zinc-600">לא נקבע</span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => startEditingNextSessionPlan(selectedSession)}
+                      className="p-1.5 text-zinc-600 hover:text-orange-500 transition-all"
+                    >
+                      <Edit2 size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

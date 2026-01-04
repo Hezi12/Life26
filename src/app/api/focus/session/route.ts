@@ -46,14 +46,26 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
     try {
         const body = await req.json();
-        const { id, startTime } = body;
+        const { id, startTime, nextSessionPlan } = body;
 
-        if (!id || !startTime) {
-            return NextResponse.json({ error: "ID and startTime are required" }, { status: 400 });
+        if (!id) {
+            return NextResponse.json({ error: "ID is required" }, { status: 400 });
+        }
+
+        const updateData: any = {};
+        if (startTime) {
+            updateData.startTime = new Date(startTime);
+        }
+        if (nextSessionPlan !== undefined) {
+            updateData.nextSessionPlan = nextSessionPlan ? new Date(nextSessionPlan) : null;
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return NextResponse.json({ error: "At least one field to update is required" }, { status: 400 });
         }
 
         await db.update(focusSessions)
-            .set({ startTime: new Date(startTime) })
+            .set(updateData)
             .where(eq(focusSessions.id, id));
 
         return NextResponse.json({ success: true });
@@ -63,12 +75,23 @@ export async function PATCH(req: Request) {
     }
 }
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
     try {
-        await db.delete(focusSessions);
-        return NextResponse.json({ success: true });
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get('id');
+
+        if (id) {
+            // Delete specific session
+            await db.delete(focusSessions)
+                .where(eq(focusSessions.id, id));
+            return NextResponse.json({ success: true });
+        } else {
+            // Delete all sessions (for reset functionality)
+            await db.delete(focusSessions);
+            return NextResponse.json({ success: true });
+        }
     } catch (error) {
-        console.error("Failed to reset focus sessions:", error);
-        return NextResponse.json({ error: "Failed to reset sessions" }, { status: 500 });
+        console.error("Failed to delete focus session:", error);
+        return NextResponse.json({ error: "Failed to delete session" }, { status: 500 });
     }
 }
