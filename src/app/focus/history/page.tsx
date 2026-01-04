@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, X, Edit2, Loader2, Trash2 } from "lucide-react";
+import { ChevronLeft, X, Edit2, Loader2, Trash2, Download, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -167,6 +167,78 @@ export default function FocusHistoryPage() {
     }
   };
 
+  const exportSessions = () => {
+    const json = JSON.stringify(sessions, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `focus-sessions-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importSessions = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          try {
+            const json = JSON.parse(event.target?.result as string);
+            if (Array.isArray(json)) {
+              if (!confirm(`האם אתה בטוח שברצונך לייבא ${json.length} מיקודים? זה יחליף את כל המיקודים הקיימים.`)) {
+                return;
+              }
+
+              setIsLoading(true);
+              try {
+                // Delete all existing sessions
+                await fetch('/api/focus/session', { method: 'DELETE' });
+
+                // Import all sessions
+                for (const session of json) {
+                  await fetch('/api/focus/session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      id: session.id,
+                      sessionNumber: session.sessionNumber,
+                      startTime: session.startTime,
+                      endTime: session.endTime,
+                      notes: session.notes,
+                      aiSummary: session.aiSummary,
+                      aiAffirmation: session.aiAffirmation,
+                      nextSessionPlan: session.nextSessionPlan,
+                      status: session.status
+                    }),
+                  });
+                }
+
+                await fetchSessions();
+                alert(`יובאו ${json.length} מיקודים בהצלחה`);
+              } catch (error) {
+                console.error("Failed to import sessions", error);
+                alert('שגיאה בייבוא המיקודים');
+              } finally {
+                setIsLoading(false);
+              }
+            } else {
+              alert('קובץ לא תקין - צריך להיות מערך של מיקודים');
+            }
+          } catch (error) {
+            alert('שגיאה בקריאת הקובץ');
+          }
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+  };
+
   return (
     <div className="h-screen overflow-hidden flex flex-col bg-black text-white selection:bg-orange-500/30" dir="rtl">
       {/* Header */}
@@ -182,6 +254,24 @@ export default function FocusHistoryPage() {
                 {sessions.length} Sessions Logged
               </p>
             </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={exportSessions}
+              disabled={isLoading || sessions.length === 0}
+              className="text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-white flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download size={14} />
+              ייצוא
+            </button>
+            <button
+              onClick={importSessions}
+              disabled={isLoading}
+              className="text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-white flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Upload size={14} />
+              ייבוא
+            </button>
           </div>
         </div>
       </header>
