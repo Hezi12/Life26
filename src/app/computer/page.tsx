@@ -13,10 +13,10 @@ import {
   Upload,
   Volume2
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, timeToMinutes, minutesToTime, calculateDuration } from "@/lib/utils";
 import { Category, Event, WorkTopic, WorkSubject, DailyNotes, StickyNotes, PomodoroSettings } from "@/lib/types";
 import { ICON_MAP, AVAILABLE_ICONS, INITIAL_CATEGORIES, NEON_COLORS } from "@/lib/constants";
-import { playSound } from "@/lib/audio";
+import { playSound, SoundType } from "@/lib/audio";
 import { api } from "@/lib/api";
 
 // --- INITIAL DATA ---
@@ -48,28 +48,10 @@ const formatDateDisplay = (date: Date): string => {
   return `${dayName} ${day}/${month}`;
 };
 
-const timeToMinutes = (time: string): number => {
-  const [hours, minutes] = time.split(':').map(Number);
-  return hours * 60 + minutes;
-};
-
-const minutesToTime = (minutes: number): string => {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-};
-
 const formatDuration = (minutes: number): string => {
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
   return hours > 0 ? `${hours}:${String(mins).padStart(2, '0')}` : `${mins}ד`;
-};
-
-const calculateDuration = (startTime: string, endTime: string): number => {
-  let start = timeToMinutes(startTime);
-  let end = timeToMinutes(endTime);
-  if (end < start) end += 1440;
-  return end - start;
 };
 
 // --- MAIN COMPONENT ---
@@ -179,9 +161,9 @@ export default function ComputerPage() {
         console.error('Sync failed', error);
       }
     };
-    window.addEventListener('life26-update' as any, handleSync);
+    window.addEventListener('life26-update', handleSync as EventListener);
     return () => {
-      window.removeEventListener('life26-update' as any, handleSync);
+      window.removeEventListener('life26-update', handleSync as EventListener);
     };
   }, []);
 
@@ -285,7 +267,7 @@ export default function ComputerPage() {
           try {
             const parsed = JSON.parse(e.newValue);
             if (typeof parsed === 'object' && parsed !== null) {
-              const notes = Object.values(parsed).find((n: any) => n.dateString === dateString) as DailyNotes | undefined;
+              const notes = Object.values(parsed).find((n: unknown) => (n as DailyNotes).dateString === dateString) as DailyNotes | undefined;
               setDailyNotes(notes || null);
             }
           } catch (error) {
@@ -343,11 +325,11 @@ export default function ComputerPage() {
       }
     };
 
-    window.addEventListener('life26-update' as any, handleCustomEvent);
+    window.addEventListener('life26-update', handleCustomEvent as unknown as EventListener);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('life26-update' as any, handleCustomEvent);
+      window.removeEventListener('life26-update', handleCustomEvent as unknown as EventListener);
     };
   }, [dateString]);
 
@@ -498,10 +480,9 @@ export default function ComputerPage() {
         try {
           for (const topicId of topicsToDelete) {
             await api.deleteWorkTopic(topicId);
-            console.log('✅ Deleted work topic from database:', topicId);
           }
         } catch (error) {
-          console.error('❌ Failed to delete work topics:', error);
+          console.error('Failed to delete work topics:', error);
         }
       };
       deleteTopics();
@@ -1489,7 +1470,7 @@ function SettingsDialog({ subjects, pomodoro, onSaveSubjects, onSavePomodoro, on
                       <option value="beep" className="bg-black">SYSTEM_BEEP</option>
                     </select>
                     <button
-                      onClick={() => playSound(localPomodoro.workSound as any)}
+                      onClick={() => playSound(localPomodoro.workSound as SoundType)}
                       className="px-4 border border-zinc-900 text-zinc-500 hover:text-orange-500 hover:border-orange-500/30 transition-all bg-black/50"
                     >
                       <Volume2 size={16} />
@@ -1512,7 +1493,7 @@ function SettingsDialog({ subjects, pomodoro, onSaveSubjects, onSavePomodoro, on
                       <option value="beep" className="bg-black">SYSTEM_BEEP</option>
                     </select>
                     <button
-                      onClick={() => playSound(localPomodoro.breakSound as any)}
+                      onClick={() => playSound(localPomodoro.breakSound as SoundType)}
                       className="px-4 border border-zinc-900 text-zinc-500 hover:text-orange-500 hover:border-orange-500/30 transition-all bg-black/50"
                     >
                       <Volume2 size={16} />

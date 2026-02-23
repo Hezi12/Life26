@@ -1,5 +1,4 @@
-
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { focusSessions } from "@/lib/schema";
 import { desc, eq } from "drizzle-orm";
@@ -18,12 +17,11 @@ export async function GET() {
     }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { id, sessionNumber, startTime, endTime, notes, aiSummary, aiAffirmation, nextSessionPlan, status } = body;
+        const { id, sessionNumber, startTime, endTime, durationMinutes, notes, aiSummary, aiAffirmation, nextSessionPlan, status } = body;
 
-        // Insert new session
         await db.insert(focusSessions).values({
             id,
             sessionNumber,
@@ -43,53 +41,17 @@ export async function POST(req: Request) {
     }
 }
 
-export async function PATCH(req: Request) {
-    try {
-        const body = await req.json();
-        const { id, startTime, nextSessionPlan } = body;
-
-        if (!id) {
-            return NextResponse.json({ error: "ID is required" }, { status: 400 });
-        }
-
-        const updateData: any = {};
-        if (startTime) {
-            updateData.startTime = new Date(startTime);
-        }
-        if (nextSessionPlan !== undefined) {
-            updateData.nextSessionPlan = nextSessionPlan ? new Date(nextSessionPlan) : null;
-        }
-
-        if (Object.keys(updateData).length === 0) {
-            return NextResponse.json({ error: "At least one field to update is required" }, { status: 400 });
-        }
-
-        await db.update(focusSessions)
-            .set(updateData)
-            .where(eq(focusSessions.id, id));
-
-        return NextResponse.json({ success: true });
-    } catch (error) {
-        console.error("Failed to update focus session:", error);
-        return NextResponse.json({ error: "Failed to update session" }, { status: 500 });
-    }
-}
-
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
 
-        if (id) {
-            // Delete specific session
-            await db.delete(focusSessions)
-                .where(eq(focusSessions.id, id));
-            return NextResponse.json({ success: true });
-        } else {
-            // Delete all sessions (for reset functionality)
-            await db.delete(focusSessions);
-            return NextResponse.json({ success: true });
+        if (!id) {
+            return NextResponse.json({ error: "Missing session id" }, { status: 400 });
         }
+
+        await db.delete(focusSessions).where(eq(focusSessions.id, id));
+        return NextResponse.json({ success: true });
     } catch (error) {
         console.error("Failed to delete focus session:", error);
         return NextResponse.json({ error: "Failed to delete session" }, { status: 500 });

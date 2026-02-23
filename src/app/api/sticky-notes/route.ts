@@ -32,5 +32,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to save sticky notes' }, { status: 500 });
   }
 }
-
-

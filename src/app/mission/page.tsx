@@ -345,7 +345,7 @@ const MissionPage = () => {
                   {[0, 1, 2, 3].map((s) => (
                     <button
                       key={s}
-                      onClick={() => saveMission(yesterdayStr, { score: s as any })}
+                      onClick={() => saveMission(yesterdayStr, { score: s as 0 | 1 | 2 | 3 })}
                       className={cn(
                         "flex-1 py-3 md:py-2 border transition-all font-black text-xs rounded-xl md:rounded-none",
                         yesterdayMission.score === s

@@ -21,7 +21,7 @@ import {
   Shield,
   BarChart3
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, timeToMinutes, minutesToTime, calculateDuration } from "@/lib/utils";
 import { 
   Category, 
   Event, 
@@ -33,26 +33,7 @@ import {
 } from "@/lib/types";
 import { ICON_MAP, INITIAL_CATEGORIES } from "@/lib/constants";
 import { api } from '@/lib/api';
-import { playSound, initAudio } from "@/lib/audio";
-
-// --- Utility Functions ---
-const minutesToTime = (minutes: number): string => {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-};
-
-const timeToMinutes = (time: string): number => {
-  const [hours, minutes] = time.split(':').map(Number);
-  return hours * 60 + minutes;
-};
-
-const calculateDuration = (start: string, end: string): number => {
-  let s = timeToMinutes(start);
-  let e = timeToMinutes(end);
-  if (e < s) e += 24 * 60;
-  return e - s;
-};
+import { playSound, initAudio, SoundType } from "@/lib/audio";
 
 // --- HomePage Component ---
 export default function HomePage() {
@@ -172,10 +153,10 @@ export default function HomePage() {
       }
     };
 
-    window.addEventListener('life26-update' as any, handleSync as any);
+    window.addEventListener('life26-update', handleSync as unknown as EventListener);
     
     return () => {
-      window.removeEventListener('life26-update' as any, handleSync as any);
+      window.removeEventListener('life26-update', handleSync as unknown as EventListener);
     };
   }, [dateString]);
 
@@ -250,7 +231,7 @@ export default function HomePage() {
         const msg = type === 'work' ? 'זמן הפסקה!' : 'חוזרים לעבודה!';
         const sound = type === 'work' ? (pomodoroSettings.workSound || 'success') : (pomodoroSettings.breakSound || 'chime');
         
-        playSound(sound as any, 0.3, 'Pomodoro', msg);
+        playSound(sound as SoundType, 0.3, 'Pomodoro', msg);
         lastActiveCycleRef.current = null;
       }
     }
@@ -291,7 +272,7 @@ export default function HomePage() {
       }
 
       if (currentCycle) {
-        lastActiveCycleRef.current = currentCycle as any;
+        lastActiveCycleRef.current = currentCycle as {type: 'work' | 'break', end: number};
       }
     }
   }, [currentTime, activeSession, pomodoroSettings, isLoaded]);
@@ -825,7 +806,13 @@ export default function HomePage() {
 
 // --- Sub-Components ---
 
-function PomodoroTimerAlternative({ activeSession, settings, currentTime }: any) {
+interface PomodoroTimerProps {
+  activeSession: { startTime: string; endTime: string } | null;
+  settings: PomodoroSettings;
+  currentTime: Date;
+}
+
+function PomodoroTimerAlternative({ activeSession, settings, currentTime }: PomodoroTimerProps) {
   const [timeLeft, setTimeLeft] = useState(0);
   const [mode, setMode] = useState<'work' | 'break'>('work');
   
