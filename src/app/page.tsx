@@ -19,8 +19,7 @@ import {
   Check,
   Zap,
   Shield,
-  BarChart3,
-  Circle
+  BarChart3
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { 
@@ -80,8 +79,6 @@ export default function HomePage() {
   const [newTopicSubjectId, setNewTopicSubjectId] = useState('');
   const [newStartTime, setNewStartTime] = useState('');
   const [newEndTime, setNewEndTime] = useState('');
-  const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
-  const [selectedEventForCategory, setSelectedEventForCategory] = useState<Event | null>(null);
 
   const dailyNotesRef = useRef<HTMLTextAreaElement>(null);
   const stickyNotesRef = useRef<HTMLTextAreaElement>(null);
@@ -191,7 +188,7 @@ export default function HomePage() {
     if (!isLoaded) return null;
     
     // Disable session view on mobile
-    if (typeof window !== 'undefined' && window.innerWidth < 740) return null;
+    if (typeof window !== 'undefined' && window.innerWidth < 768) return null;
 
     const computerEvents = dailyEvents.filter(event => {
       const category = categories.find(c => c.id === event.categoryId);
@@ -239,7 +236,7 @@ export default function HomePage() {
     if (!isLoaded || !pomodoroSettings.soundsEnabled) return;
     
     // Disable sounds on mobile
-    if (typeof window !== 'undefined' && window.innerWidth < 740) return;
+    if (typeof window !== 'undefined' && window.innerWidth < 768) return;
 
     const nowMins = currentTime.getHours() * 60 + currentTime.getMinutes();
     const nowSecs = currentTime.getSeconds();
@@ -413,36 +410,6 @@ export default function HomePage() {
     }
   }, [dateString, dailyNotes]);
 
-  const handleTypewriterScroll = useCallback(() => {
-    const textarea = dailyNotesRef.current;
-    if (!textarea) return;
-
-    const computedStyle = getComputedStyle(textarea);
-    const lineHeight = parseInt(computedStyle.lineHeight) || 24;
-    const cursorPosition = textarea.selectionStart;
-    const textBeforeCursor = textarea.value.substring(0, cursorPosition);
-    const lines = textBeforeCursor.split('\n').length;
-
-    const cursorY = lines * lineHeight;
-    const containerHeight = textarea.clientHeight;
-    const targetScrollTop = cursorY - (containerHeight / 2);
-
-    textarea.scrollTo({
-      top: targetScrollTop,
-      behavior: 'smooth'
-    });
-  }, []);
-
-  // Initial scroll to bottom
-  useEffect(() => {
-    if (dailyNotesRef.current) {
-      const textarea = dailyNotesRef.current;
-      textarea.selectionStart = textarea.value.length;
-      textarea.selectionEnd = textarea.value.length;
-      setTimeout(handleTypewriterScroll, 100);
-    }
-  }, [handleTypewriterScroll]);
-
   const saveStickyNotes = useCallback(async () => {
     if (typeof window === 'undefined' || isTypingRef.current) return;
     
@@ -519,8 +486,13 @@ export default function HomePage() {
                   )}
                 </div>
               </div>
-              <div className="text-[9px] sm:text-[10px] font-black text-orange-500/30 uppercase tracking-[0.2em] animate-pulse italic">
-                Life_Matrix_Active
+              <div className="flex flex-col items-end gap-1.5">
+                <div className="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] tabular-nums">
+                  {new Intl.DateTimeFormat('he-IL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(currentTime)}
+                </div>
+                <div className="text-[9px] sm:text-[10px] font-black text-orange-500/30 uppercase tracking-[0.2em] animate-pulse italic">
+                  Life_Matrix_Active
+                </div>
               </div>
             </div>
           </div>
@@ -528,7 +500,7 @@ export default function HomePage() {
       ) : (
         <>
           {/* Header - Mobile responsive */}
-          <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-4 pt-[calc(1rem+env(safe-area-inset-top))] sm:p-5 lg:p-6 border-b border-zinc-900 bg-black/50 backdrop-blur-md shrink-0">
+          <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-4 pt-[calc(1rem+env(safe-area-inset-top))] sm:p-6 border-b border-zinc-900 bg-black/50 backdrop-blur-md shrink-0">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 w-full sm:w-auto">
               <h1 className="text-lg sm:text-xl font-black italic tracking-[0.2em] text-white">OPERATIONAL HUD</h1>
               
@@ -560,7 +532,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="hidden sm:flex items-center gap-3 lg:gap-4">
+            <div className="hidden sm:flex items-center gap-3 sm:gap-4">
               <div className="flex items-center gap-2 sm:gap-2.5 px-3 py-1.5 bg-zinc-900/30 border border-zinc-800 rounded-sm">
                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)] animate-pulse" />
                 <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500">System_Online</span>
@@ -576,9 +548,9 @@ export default function HomePage() {
               {/* Background scanner effect */}
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.03)_0%,transparent_70%)] pointer-events-none" />
               
-              <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 lg:p-10 animate-in fade-in duration-1000">
+              <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-10 animate-in fade-in duration-1000">
                 {/* Active Session Status - Mobile responsive */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 border-b border-zinc-900 pb-4 sm:pb-5 mb-6 md:mb-8 lg:mb-16 relative z-10">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 border-b border-zinc-900 pb-4 sm:pb-5 mb-6 md:mb-16 relative z-10">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 w-full sm:w-auto">
                     <div className="flex items-center gap-3 sm:gap-4">
                       <div className="p-2 bg-orange-500/10 border border-orange-500/20 rounded-lg md:rounded-sm text-orange-500">
@@ -668,7 +640,7 @@ export default function HomePage() {
                 <div className="flex-1 flex flex-col items-center justify-center relative z-10 overflow-hidden">
                   
                   {/* Center: Clock & Map */}
-                  <div className="w-full flex flex-col items-center justify-center mb-auto pt-6 md:pt-8 lg:pt-10">
+                  <div className="w-full flex flex-col items-center justify-center mb-auto pt-6 md:pt-10">
                     <PomodoroTimerAlternative 
                       activeSession={activeSession}
                       settings={pomodoroSettings}
@@ -678,12 +650,12 @@ export default function HomePage() {
 
                   {/* Bottom: Operational Timeline - High-End Modular Matrix */}
                   <div className="w-full max-w-5xl mt-auto pb-4 px-2 md:px-0">
-                    <div className="flex flex-col md:flex-row gap-3 items-stretch md:h-32 lg:h-40">
+                    <div className="flex flex-col md:flex-row gap-3 items-stretch md:h-40">
                       {/* CURRENT MISSION BOX */}
                       <div className="flex-1 md:flex-[1.4] relative">
-                        <div className="h-full bg-zinc-900/40 border border-orange-500/30 rounded-2xl md:rounded-sm p-4 lg:p-5 backdrop-blur-md relative overflow-hidden shadow-lg md:shadow-[0_0_40px_rgba(249,115,22,0.05)]">
+                        <div className="h-full bg-zinc-900/40 border border-orange-500/30 rounded-2xl md:rounded-sm p-5 md:p-5 backdrop-blur-md relative overflow-hidden shadow-lg md:shadow-[0_0_40px_rgba(249,115,22,0.05)]">
                           {/* Decorative background number */}
-                          <div className="absolute -right-2 -bottom-6 text-[80px] md:text-[90px] lg:text-[100px] font-black text-white/[0.02] italic pointer-events-none select-none">NOW</div>
+                          <div className="absolute -right-2 -bottom-6 text-[80px] md:text-[100px] font-black text-white/[0.02] italic pointer-events-none select-none">NOW</div>
                           
                           <div className="relative z-10 flex flex-col h-full justify-between">
                             <div className="space-y-3">
@@ -725,20 +697,7 @@ export default function HomePage() {
                                       boxShadow: `0 4px 10px ${categories.find(c => c.id === timelineData.current?.categoryId)?.color}40`
                                     }} 
                                   />
-                                  <span 
-                                    onClick={(e) => {
-                                      const currentCategory = categories.find(c => c.id === timelineData.current?.categoryId);
-                                      if (currentCategory?.id === "0" && timelineData.current) {
-                                        e.stopPropagation();
-                                        setSelectedEventForCategory(timelineData.current);
-                                        setIsCategoryPickerOpen(true);
-                                      }
-                                    }}
-                                    className={cn(
-                                      "text-[9px] font-black text-zinc-500 uppercase tracking-widest",
-                                      categories.find(c => c.id === timelineData.current?.categoryId)?.id === "0" && "cursor-pointer hover:underline"
-                                    )}
-                                  >
+                                  <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">
                                     {categories.find(c => c.id === timelineData.current?.categoryId)?.name || 'General'}
                                   </span>
                                 </div>
@@ -771,21 +730,7 @@ export default function HomePage() {
                                   <div className="text-xs sm:text-[14px] font-black text-zinc-300 uppercase leading-tight tracking-tight group-hover/item:text-white transition-colors">
                                     {event.title.split(':')[0]}
                                   </div>
-                                  <div 
-                                    onClick={(e) => {
-                                      if (category?.id === "0" && event) {
-                                        e.stopPropagation();
-                                        setSelectedEventForCategory(event);
-                                        setIsCategoryPickerOpen(true);
-                                      }
-                                    }}
-                                    className={cn(
-                                      "text-[6px] sm:text-[7px] font-black text-zinc-700 uppercase tracking-[0.2em]",
-                                      category?.id === "0" && "cursor-pointer hover:underline"
-                                    )}
-                                  >
-                                    {category?.name}
-                                  </div>
+                                  <div className="text-[6px] sm:text-[7px] font-black text-zinc-700 uppercase tracking-[0.2em]">{category?.name}</div>
                                 </div>
 
                                 <div 
@@ -812,10 +757,10 @@ export default function HomePage() {
             <div className="hidden md:flex md:col-span-5 flex-col overflow-hidden bg-black border-r border-zinc-900 border-t md:border-t-0">
               
               {/* Daily Protocol Panel */}
-              <div className="flex-1 flex flex-col p-4 sm:p-5 md:p-6 lg:p-8 border-b border-zinc-900 overflow-hidden relative">
+              <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 border-b border-zinc-900 overflow-hidden relative">
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:30px_30px] pointer-events-none" />
                 
-                <div className="flex items-center justify-between mb-4 lg:mb-6 relative z-10">
+                <div className="flex items-center justify-between mb-6 relative z-10">
                   <div className="flex items-center gap-3">
                     <div className="w-1 h-4 bg-orange-500 shadow-[0_0_8px_#f97316]" />
                     <h2 className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-black">Daily_Protocol</h2>
@@ -825,20 +770,16 @@ export default function HomePage() {
                 
                 <div className="flex-1 relative group z-10">
                   <div className="absolute -right-1 top-0 h-8 w-[2px] bg-orange-500 group-focus-within:h-full transition-all duration-700 ease-in-out" />
-                  <div className="h-full bg-zinc-950/40 p-4 sm:p-5 lg:p-8 border border-white/5 focus-within:border-orange-500/20 transition-all rounded-sm shadow-[inset_0_0_40px_rgba(0,0,0,0.8)] backdrop-blur-sm">
+                  <div className="h-full bg-zinc-950/40 p-8 border border-white/5 focus-within:border-orange-500/20 transition-all rounded-sm shadow-[inset_0_0_40px_rgba(0,0,0,0.8)] backdrop-blur-sm">
                     <textarea
                       ref={dailyNotesRef}
                       defaultValue={dailyNotes?.content || ''}
-                      onFocus={(e) => { 
-                        isTypingRef.current = true;
-                        handleTypewriterScroll();
-                      }}
-                      onInput={handleTypewriterScroll}
+                      onFocus={() => { isTypingRef.current = true; }}
                       onBlur={() => { 
                         isTypingRef.current = false;
                         saveDailyNotes();
                       }}
-                      className="w-full h-full bg-transparent text-zinc-300 text-sm sm:text-[15px] font-mono leading-[1.8] p-0 resize-none outline-none placeholder:text-zinc-900 font-medium scrollbar-hide pb-[50vh]"
+                      className="w-full h-full bg-transparent text-zinc-300 text-sm sm:text-[15px] font-mono leading-[1.8] p-0 resize-none outline-none placeholder:text-zinc-900 font-medium scrollbar-hide"
                       placeholder="Initialize operational log stream..."
                     />
                   </div>
@@ -846,8 +787,8 @@ export default function HomePage() {
               </div>
 
               {/* Static Buffer Panel */}
-              <div className="h-[30%] lg:h-[35%] min-h-[150px] sm:min-h-[200px] flex flex-col p-4 sm:p-5 md:p-6 lg:p-8 overflow-hidden bg-[#030303] relative">
-                <div className="flex items-center justify-between mb-3 lg:mb-4 relative z-10">
+              <div className="h-[35%] min-h-[200px] sm:min-h-[250px] md:h-[35%] flex flex-col p-4 sm:p-6 md:p-8 overflow-hidden bg-[#030303] relative">
+                <div className="flex items-center justify-between mb-4 relative z-10">
                   <div className="flex items-center gap-3">
                     <div className="w-1 h-4 bg-zinc-800" />
                     <h2 className="text-[10px] uppercase tracking-[0.4em] text-zinc-600 font-black">Static_Buffer</h2>
@@ -855,7 +796,7 @@ export default function HomePage() {
                   <div className="text-[8px] font-mono text-zinc-800 uppercase tracking-[0.3em] font-black italic">MEM_CACHE</div>
                 </div>
                 
-                <div className="flex-1 bg-black p-4 lg:p-6 flex flex-col transition-all border border-zinc-900/50 focus-within:border-zinc-700/50 relative group/buffer">
+                <div className="flex-1 bg-black p-6 flex flex-col transition-all border border-zinc-900/50 focus-within:border-zinc-700/50 relative group/buffer">
                   <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-zinc-800" />
                   <textarea
                     ref={stickyNotesRef}
@@ -868,7 +809,7 @@ export default function HomePage() {
                     className="w-full h-full bg-transparent text-zinc-500 text-xs sm:text-[13px] font-mono leading-relaxed p-0 resize-none outline-none placeholder:text-zinc-900 scrollbar-hide"
                     placeholder="Persistent data encryption area..."
                   />
-                  <div className="flex justify-end mt-1 lg:mt-2 opacity-30 group-focus-within/buffer:opacity-100 transition-opacity">
+                  <div className="flex justify-end mt-2 opacity-30 group-focus-within/buffer:opacity-100 transition-opacity">
                     <div className="text-[7px] text-zinc-800 font-black uppercase tracking-[0.4em]">SYNC_READY</div>
                   </div>
                 </div>
@@ -878,64 +819,6 @@ export default function HomePage() {
           </div>
         </>
       )}
-
-      {/* Category Picker Modal */}
-      {isCategoryPickerOpen && selectedEventForCategory && (
-        <CategoryPickerModal
-          categories={categories}
-          event={selectedEventForCategory}
-          onClose={() => {
-            setIsCategoryPickerOpen(false);
-            setSelectedEventForCategory(null);
-          }}
-          onSelect={async (categoryId: string) => {
-            const updatedEvent = { ...selectedEventForCategory, categoryId };
-            await api.saveEvent(updatedEvent);
-            const refreshedEvents = await api.getEvents();
-            if (refreshedEvents && Array.isArray(refreshedEvents)) {
-              setEvents(refreshedEvents);
-            }
-            setIsCategoryPickerOpen(false);
-            setSelectedEventForCategory(null);
-            window.dispatchEvent(new CustomEvent('life26-update', {
-              detail: { type: 'events-updated', source: 'dashboard-page' }
-            }));
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-// Category Picker Modal Component
-function CategoryPickerModal({ categories, event, onClose, onSelect }: { categories: Category[], event: Event, onClose: () => void, onSelect: (categoryId: string) => void }) {
-  return (
-    <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4" dir="rtl" onClick={onClose}>
-      <div className="bg-[#0a0a0a] border border-zinc-800 w-full max-w-md max-h-[80vh] flex flex-col rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="p-6 border-b border-zinc-900 flex justify-between items-center bg-zinc-900/20">
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500 italic">Select_Category</div>
-            <div className="text-sm text-zinc-400 mt-1">{event.title}</div>
-          </div>
-          <button onClick={onClose} className="text-zinc-600 hover:text-white transition-colors"><X size={20} /></button>
-        </div>
-        <div className="p-6 overflow-y-auto flex-1 space-y-2 scrollbar-hide">
-          {categories.filter(c => c.id !== "0").map(cat => {
-            const Icon = ICON_MAP[cat.iconName] || Circle;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => onSelect(cat.id)}
-                className="w-full flex items-center gap-4 p-4 border border-zinc-900 bg-white/[0.01] rounded-sm overflow-hidden transition-all hover:bg-white/[0.03] hover:border-zinc-800 group"
-              >
-                <div className="w-1 h-6 shadow-[0_0_8px_currentColor]" style={{ backgroundColor: cat.color, color: cat.color }} />
-                <div className="p-2 rounded-sm bg-black border border-zinc-800" style={{ color: cat.color }}><Icon size={16} /></div>
-                <span className="text-sm font-black text-zinc-300 uppercase tracking-widest flex-1 text-right">{cat.name}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }
@@ -1038,8 +921,8 @@ function PomodoroTimerAlternative({ activeSession, settings, currentTime }: any)
     : 0;
 
   return (
-    <div className="flex flex-col items-center gap-6 md:gap-8 lg:gap-10">
-      <div className="relative w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 flex items-center justify-center">
+    <div className="flex flex-col items-center gap-10">
+      <div className="relative w-72 h-72 flex items-center justify-center">
         {/* Ultra Modern Clean Ring */}
         <svg className="w-full h-full -rotate-90 absolute" viewBox="0 0 100 100">
           <circle cx="50" cy="50" r="48" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
@@ -1057,13 +940,13 @@ function PomodoroTimerAlternative({ activeSession, settings, currentTime }: any)
       </svg>
 
         <div className="flex flex-col items-center justify-center z-10">
-          <div className="text-[7px] sm:text-[8px] md:text-[9px] font-black uppercase tracking-[0.5em] text-zinc-600 mb-1 opacity-80 italic leading-none">
+          <div className="text-[9px] font-black uppercase tracking-[0.5em] text-zinc-600 mb-1 opacity-80 italic leading-none">
             {mode === 'work' ? 'FOCUS_STREAM' : 'RECOVERY_MODE'}
         </div>
-          <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter text-white tabular-nums leading-none">
+          <div className="text-7xl font-black tracking-tighter text-white tabular-nums leading-none">
           {formatTime(timeLeft)}
           </div>
-          <div className="mt-4 sm:mt-5 md:mt-6 flex items-center justify-center">
+          <div className="mt-6 flex items-center justify-center">
             <div className={cn("w-1 h-1 rounded-full animate-pulse", mode === 'work' ? "bg-orange-500" : "bg-cyan-500")} />
           </div>
         </div>
