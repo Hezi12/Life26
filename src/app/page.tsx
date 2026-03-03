@@ -450,31 +450,15 @@ export default function HomePage() {
               })}
             </div>
             
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0 border-t border-white/[0.03] pt-4 sm:pt-6 px-2">
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[9px] sm:text-[10px] font-black text-zinc-800 uppercase tracking-[0.5em] italic">MEMENTO_MORI</span>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-                  <span className="text-[8px] sm:text-[9px] text-zinc-500 font-bold uppercase tracking-widest">
-                    {weeksExpired} / 4160 WEEKS EXPIRED (80 YEARS)
+            <div className="flex justify-center border-t border-white/[0.03] pt-4 sm:pt-6 px-2">
+              {hoveredWeek !== null && (
+                <div className="flex items-center gap-2 animate-in fade-in duration-300">
+                  <div className="w-1 h-1 bg-orange-500 rounded-full animate-pulse" />
+                  <span className="text-[9px] sm:text-[10px] font-black text-orange-500 uppercase tracking-widest">
+                    {(hoveredWeek / 52).toFixed(1)} שנים
                   </span>
-                  {hoveredWeek !== null && (
-                    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-300">
-                      <div className="w-1 h-1 bg-orange-500 rounded-full animate-pulse" />
-                      <span className="text-[9px] sm:text-[10px] font-black text-orange-500 uppercase tracking-widest">
-                        ESTIMATED AGE: {(hoveredWeek / 52).toFixed(1)} YRS
-                      </span>
-                    </div>
-                  )}
                 </div>
-              </div>
-              <div className="flex flex-col items-end gap-1.5">
-                <div className="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] tabular-nums">
-                  {new Intl.DateTimeFormat('he-IL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(currentTime)}
-                </div>
-                <div className="text-[9px] sm:text-[10px] font-black text-orange-500/30 uppercase tracking-[0.2em] animate-pulse italic">
-                  Life_Matrix_Active
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
