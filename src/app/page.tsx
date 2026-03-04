@@ -450,31 +450,15 @@ export default function HomePage() {
               })}
             </div>
             
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0 border-t border-white/[0.03] pt-4 sm:pt-6 px-2">
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[9px] sm:text-[10px] font-black text-zinc-800 uppercase tracking-[0.5em] italic">MEMENTO_MORI</span>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-                  <span className="text-[8px] sm:text-[9px] text-zinc-500 font-bold uppercase tracking-widest">
-                    {weeksExpired} / 4160 WEEKS EXPIRED (80 YEARS)
+            <div className="flex justify-center border-t border-white/[0.03] pt-4 sm:pt-6 px-2">
+              {hoveredWeek !== null && (
+                <div className="flex items-center gap-2 animate-in fade-in duration-300">
+                  <div className="w-1 h-1 bg-orange-500 rounded-full animate-pulse" />
+                  <span className="text-[9px] sm:text-[10px] font-black text-orange-500 uppercase tracking-widest">
+                    {(hoveredWeek / 52).toFixed(1)} שנים
                   </span>
-                  {hoveredWeek !== null && (
-                    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-300">
-                      <div className="w-1 h-1 bg-orange-500 rounded-full animate-pulse" />
-                      <span className="text-[9px] sm:text-[10px] font-black text-orange-500 uppercase tracking-widest">
-                        ESTIMATED AGE: {(hoveredWeek / 52).toFixed(1)} YRS
-                      </span>
-                    </div>
-                  )}
                 </div>
-              </div>
-              <div className="flex flex-col items-end gap-1.5">
-                <div className="text-[10px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] tabular-nums">
-                  {new Intl.DateTimeFormat('he-IL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(currentTime)}
-                </div>
-                <div className="text-[9px] sm:text-[10px] font-black text-orange-500/30 uppercase tracking-[0.2em] animate-pulse italic">
-                  Life_Matrix_Active
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -483,7 +467,7 @@ export default function HomePage() {
           {/* Header - Mobile responsive */}
           <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-4 pt-[calc(1rem+env(safe-area-inset-top))] sm:p-6 border-b border-zinc-900 bg-black/50 backdrop-blur-md shrink-0">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 w-full sm:w-auto">
-              <h1 className="text-lg sm:text-xl font-black italic tracking-[0.2em] text-white">OPERATIONAL HUD</h1>
+              <h1 className="text-lg sm:text-xl font-black italic tracking-[0.2em] text-white">LIFE26</h1>
               
               {/* Navigation Controls - Mobile optimized */}
               <div className="flex items-center gap-2 sm:gap-3 bg-zinc-900/30 p-1 border border-zinc-800 rounded-lg w-full sm:w-auto">
@@ -501,7 +485,7 @@ export default function HomePage() {
                 </button>
                 <div className="w-px h-4 bg-zinc-800 mx-1" />
                 <div className="text-[10px] sm:text-xs font-bold text-orange-500 px-2 min-w-[120px] sm:min-w-[140px] text-center">
-                  {isLoaded ? new Intl.DateTimeFormat('he-IL', { weekday: 'long', day: 'numeric', month: 'short' }).format(currentTime) : "INITIALIZING..."}
+                  {isLoaded ? new Intl.DateTimeFormat('he-IL', { weekday: 'long', day: 'numeric', month: 'short' }).format(currentTime) : "טוען..."}
                 </div>
                 <div className="w-px h-4 bg-zinc-800 mx-1" />
                 <button
@@ -516,7 +500,7 @@ export default function HomePage() {
             <div className="hidden sm:flex items-center gap-3 sm:gap-4">
               <div className="flex items-center gap-2 sm:gap-2.5 px-3 py-1.5 bg-zinc-900/30 border border-zinc-800 rounded-sm">
                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)] animate-pulse" />
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500">System_Online</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500">Online</span>
               </div>
             </div>
           </header>
@@ -538,7 +522,7 @@ export default function HomePage() {
                         <Monitor size={14} className="sm:w-4 sm:h-4" strokeWidth={2.5} />
                       </div>
                       <div className="flex flex-col">
-                        <div className="text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none mb-1">Active_Deployment</div>
+                        <div className="text-[8px] sm:text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none mb-1">סשן פעיל</div>
                         <div className="text-[11px] sm:text-xs font-black text-white tabular-nums tracking-widest">
                           {activeSession.startTime} <span className="mx-1 sm:mx-2 text-zinc-800">—</span> {activeSession.endTime}
                         </div>
@@ -552,14 +536,14 @@ export default function HomePage() {
                       {currentTopic ? (
                         <div className="flex items-center gap-2 sm:gap-3">
                           <div className="flex flex-col">
-                            <div className="text-[7px] sm:text-[8px] font-black text-zinc-600 uppercase tracking-widest leading-none mb-1">Current_Topic</div>
+                            <div className="text-[7px] sm:text-[8px] font-black text-zinc-600 uppercase tracking-widest leading-none mb-1">נושא נוכחי</div>
                             <div className="text-[10px] sm:text-[11px] font-black text-orange-500 uppercase tracking-wide">
                               {workSubjects.find(s => s.id === currentTopic.subjectId)?.name || 'N/A'}
                             </div>
                           </div>
                         </div>
                       ) : (
-                        <div className="text-[8px] sm:text-[9px] font-black text-zinc-800 uppercase tracking-widest">No_Topic_Set</div>
+                        <div className="text-[8px] sm:text-[9px] font-black text-zinc-800 uppercase tracking-widest">ללא נושא</div>
                       )}
 
                       <div className="flex items-center gap-2 sm:gap-3">
@@ -744,9 +728,8 @@ export default function HomePage() {
                 <div className="flex items-center justify-between mb-6 relative z-10">
                   <div className="flex items-center gap-3">
                     <div className="w-1 h-4 bg-orange-500 shadow-[0_0_8px_#f97316]" />
-                    <h2 className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-black">Daily_Protocol</h2>
+                    <h2 className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-black">יומן</h2>
                   </div>
-                  <div className="text-[8px] font-mono text-zinc-800 uppercase tracking-widest font-black">Ref // IO_STREAM_03</div>
                 </div>
                 
                 <div className="flex-1 relative group z-10">
@@ -761,7 +744,7 @@ export default function HomePage() {
                         saveDailyNotes();
                       }}
                       className="w-full h-full bg-transparent text-zinc-300 text-sm sm:text-[15px] font-mono leading-[1.8] p-0 resize-none outline-none placeholder:text-zinc-900 font-medium scrollbar-hide"
-                      placeholder="Initialize operational log stream..."
+                      placeholder="כתוב כאן..."
                     />
                   </div>
                 </div>
@@ -772,9 +755,8 @@ export default function HomePage() {
                 <div className="flex items-center justify-between mb-4 relative z-10">
                   <div className="flex items-center gap-3">
                     <div className="w-1 h-4 bg-zinc-800" />
-                    <h2 className="text-[10px] uppercase tracking-[0.4em] text-zinc-600 font-black">Static_Buffer</h2>
+                    <h2 className="text-[10px] uppercase tracking-[0.4em] text-zinc-600 font-black">פתקים</h2>
                   </div>
-                  <div className="text-[8px] font-mono text-zinc-800 uppercase tracking-[0.3em] font-black italic">MEM_CACHE</div>
                 </div>
                 
                 <div className="flex-1 bg-black p-6 flex flex-col transition-all border border-zinc-900/50 focus-within:border-zinc-700/50 relative group/buffer">
@@ -788,10 +770,10 @@ export default function HomePage() {
                       saveStickyNotes();
                     }}
                     className="w-full h-full bg-transparent text-zinc-500 text-xs sm:text-[13px] font-mono leading-relaxed p-0 resize-none outline-none placeholder:text-zinc-900 scrollbar-hide"
-                    placeholder="Persistent data encryption area..."
+                    placeholder="פתקים קבועים..."
                   />
                   <div className="flex justify-end mt-2 opacity-30 group-focus-within/buffer:opacity-100 transition-opacity">
-                    <div className="text-[7px] text-zinc-800 font-black uppercase tracking-[0.4em]">SYNC_READY</div>
+                    <div className="text-[7px] text-zinc-800 font-black uppercase tracking-[0.4em]"></div>
                   </div>
                 </div>
               </div>
@@ -928,7 +910,7 @@ function PomodoroTimerAlternative({ activeSession, settings, currentTime }: Pomo
 
         <div className="flex flex-col items-center justify-center z-10">
           <div className="text-[9px] font-black uppercase tracking-[0.5em] text-zinc-600 mb-1 opacity-80 italic leading-none">
-            {mode === 'work' ? 'FOCUS_STREAM' : 'RECOVERY_MODE'}
+            {mode === 'work' ? 'עבודה' : 'הפסקה'}
         </div>
           <div className="text-7xl font-black tracking-tighter text-white tabular-nums leading-none">
           {formatTime(timeLeft)}
