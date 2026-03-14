@@ -79,3 +79,27 @@ export interface DailyMission {
   score?: 0 | 1 | 2 | 3;
 }
 
+export type FocusContentType = 'task' | 'brainstorm' | 'freewrite' | 'strategy';
+export type FocusStatus = 'active' | 'locked' | 'completed';
+
+export interface FocusSession {
+  id: string;
+  sessionNumber: number;
+  dateString: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime?: string; // HH:mm
+  contentType: FocusContentType;
+  notes: string;
+  aiSummary?: string;
+  aiAffirmation?: string;
+  nextFocusTime?: string; // HH:mm
+  nextFocusDate?: string; // YYYY-MM-DD
+  status: FocusStatus;
+}
+
+export interface FocusSettings {
+  schedule: { day: string; time: string }[];
+  notificationPreMinutes: number;
+  notifyOnTime: boolean;
+}
+

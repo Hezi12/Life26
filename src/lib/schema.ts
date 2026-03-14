@@ -115,14 +115,17 @@ export const chatSessions = pgTable('chat_sessions', {
 // Focus Sessions table
 export const focusSessions = pgTable('focus_sessions', {
   id: text('id').primaryKey(),
-  sessionNumber: integer('session_number'),
-  startTime: timestamp('start_time').notNull(),
-  endTime: timestamp('end_time'),
-  notes: text('notes'),
+  sessionNumber: integer('session_number').notNull(),
+  dateString: text('date_string').notNull(), // YYYY-MM-DD
+  startTime: text('start_time').notNull(), // HH:mm
+  endTime: text('end_time'), // HH:mm
+  contentType: text('content_type').notNull(), // 'task' | 'brainstorm' | 'freewrite' | 'strategy'
+  notes: text('notes').default(''),
   aiSummary: text('ai_summary'),
   aiAffirmation: text('ai_affirmation'),
-  nextSessionPlan: timestamp('next_session_plan'),
-  status: text('status').notNull(), // 'completed', 'abandoned'
+  nextFocusTime: text('next_focus_time'), // HH:mm — locked time for next focus
+  nextFocusDate: text('next_focus_date'), // YYYY-MM-DD
+  status: text('status').notNull(), // 'active' | 'locked' | 'completed'
 });
 
 // Focus Settings table
