@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { Habit, HabitLog } from "@/lib/types";
 import { ICON_MAP, NEON_COLORS, AVAILABLE_ICONS } from "@/lib/constants";
 import { api } from "@/lib/api";
+import { SectionHeader } from "@/components/SectionHeader";
 
 const DAYS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 
@@ -582,10 +583,3 @@ export default function HabitsPage() {
     </div>
   );
 }
-
-const SectionHeader = ({ icon, title, color = "text-zinc-500" }: { icon: React.ReactNode, title: string, color?: string }) => (
-  <div className="flex items-center gap-3 border-b border-zinc-900/50 pb-4 shrink-0">
-    <span className={cn(color)}>{icon}</span>
-    <h2 className={cn("text-[11px] font-black uppercase tracking-[0.4em]", color)}>{title}</h2>
-  </div>
-);
