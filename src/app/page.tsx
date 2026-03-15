@@ -512,7 +512,7 @@ export default function HomePage() {
   return (
     <div className="h-screen overflow-hidden flex flex-col bg-black text-white font-mono selection:bg-orange-500/30 selection:text-white pt-safe" dir="rtl">
       {!activeSession ? (
-        <div className="flex-1 bg-black flex flex-col overflow-auto pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8 pt-safe" dir="rtl">
+        <div className="flex-1 bg-black flex flex-col overflow-auto pb-32 pt-safe" dir="rtl">
           {/* Background */}
           <div className="fixed inset-0 bg-[radial-gradient(#ffffff03_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
 

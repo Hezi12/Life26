@@ -317,7 +317,7 @@ export default function AnalyticsPage() {
   })();
 
   return (
-    <div className="h-screen overflow-y-auto bg-black text-white font-mono pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8 pt-safe" dir="rtl">
+    <div className="min-h-screen bg-black text-white font-mono pb-24 md:pb-8 pt-safe" dir="rtl">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-black/90 backdrop-blur-xl border-b border-zinc-900/80 px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">

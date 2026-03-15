@@ -48,8 +48,10 @@ export default function RootLayout({
       <body className={`${inter.className} bg-black text-white antialiased h-full transition-colors duration-500`}>
         <ServiceWorkerRegistration />
         <PinLock>
-          <main className="h-full mr-0 md:mr-16 overflow-hidden">
-            {children}
+          <main className="min-h-full mr-0 md:mr-16 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0 overflow-y-auto">
+            <div className="min-h-full">
+              {children}
+            </div>
           </main>
           <Sidebar />
         </PinLock>
