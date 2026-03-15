@@ -32,11 +32,14 @@ export function ParserModal({
   useEffect(() => {
     const lines = input.split('\n').filter((line: string) => line.trim());
     const newEvents: Event[] = [];
+    // Track which existing events have been matched to preserve their IDs
+    const matchedExistingIds = new Set<string>();
     lines.forEach((line: string) => {
       const timeMatch = line.match(/^(\d{2}):?(\d{2})/);
       if (timeMatch) {
         const title = line.replace(/^(\d{2}):?(\d{2})/, "").trim();
         if (title) {
+          const time = `${timeMatch[1]}:${timeMatch[2]}`;
           const defaultCategory = categories.find((c: Category) => c.id === "0") || categories[0];
           let categoryId = defaultCategory?.id || "0";
           for (const cat of categories) {
@@ -45,18 +48,20 @@ export function ParserModal({
               break;
             }
           }
-          newEvents.push({ 
-            id: Math.random().toString(36).substr(2, 9), 
-            dateString, 
-            time: `${timeMatch[1]}:${timeMatch[2]}`, 
-            title, 
-            categoryId 
-          });
+          // Reuse existing event ID if time+title match, to avoid unnecessary ID churn
+          const existingMatch = existingEvents.find(
+            (e) => e.time === time && e.title === title && !matchedExistingIds.has(e.id)
+          );
+          const id = existingMatch
+            ? existingMatch.id
+            : Math.random().toString(36).substr(2, 9);
+          if (existingMatch) matchedExistingIds.add(existingMatch.id);
+          newEvents.push({ id, dateString, time, title, categoryId });
         }
       }
     });
     setParsed(newEvents);
-  }, [input, dateString, categories]);
+  }, [input, dateString, categories, existingEvents]);
 
   return (
     <div className="fixed inset-0 bg-black/98 z-[110] flex items-center justify-center md:p-4 pt-safe" onClick={onClose} dir="rtl">

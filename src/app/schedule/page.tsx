@@ -234,7 +234,15 @@ export default function SchedulePage() {
         ]);
         
         if (eventsData && Array.isArray(eventsData) && eventsData.length > 0) {
-          setEvents(eventsData);
+          // Deduplicate events by dateString+time+title to clean up any existing duplicates
+          const seen = new Set<string>();
+          const deduped = eventsData.filter((e: Event) => {
+            const key = `${e.dateString}|${e.time}|${e.title}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+          setEvents(deduped);
         }
         
         if (categoriesData && Array.isArray(categoriesData) && categoriesData.length > 0) {
@@ -290,7 +298,15 @@ export default function SchedulePage() {
       try {
         const eventsData = await api.getEvents();
         if (eventsData && Array.isArray(eventsData)) {
-          setEvents(eventsData);
+          // Deduplicate on sync too
+          const seen = new Set<string>();
+          const deduped = eventsData.filter((e: Event) => {
+            const key = `${e.dateString}|${e.time}|${e.title}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+          setEvents(deduped);
         }
         const ds = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
         const parserTextData = await api.getParserTexts(ds);
@@ -827,15 +843,22 @@ export default function SchedulePage() {
       {isParserOpen && (
         <ParserModal dateString={dateString} categories={categories} existingEvents={dailyEvents} initialText={dailyParserTexts[dateString] || ""} 
           onClose={() => setIsParserOpen(false)} onSave={async (newEvents: Event[], inputText: string) => {
-            setEvents(prev => [...prev.filter(e => e.dateString !== dateString), ...newEvents]);
+            // Deduplicate parsed events by time+title before saving
+            const seenKeys = new Set<string>();
+            const dedupedEvents = newEvents.filter(e => {
+              const key = `${e.time}|${e.title}`;
+              if (seenKeys.has(key)) return false;
+              seenKeys.add(key);
+              return true;
+            });
+
+            // Update local state immediately for responsiveness
+            setEvents(prev => [...prev.filter(e => e.dateString !== dateString), ...dedupedEvents]);
             setDailyParserTexts(prev => ({...prev, [dateString]: inputText}));
 
-            // Delete old events for this date, then save new ones
+            // Atomic replace: delete old + insert new in a single DB transaction
             try {
-              await api.deleteEventsByDate(dateString);
-              for (const event of newEvents) {
-                await api.saveEvent(event);
-              }
+              await api.replaceEventsByDate(dateString, dedupedEvents);
             } catch (error) {
               console.error('Failed to save parser events', error);
             }
@@ -851,7 +874,7 @@ export default function SchedulePage() {
               console.error('Failed to save parser text', error);
             }
 
-            // Notify other pages
+            // Notify other pages AFTER all DB writes are done
             window.dispatchEvent(new CustomEvent('life26-update', {
               detail: { type: 'events-updated', source: 'schedule-page' }
             }));

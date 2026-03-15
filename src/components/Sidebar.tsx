@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -29,6 +29,7 @@ const Sidebar = () => {
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
   const [todayEvents, setTodayEvents] = useState<Event[]>([]);
   const [todayText, setTodayText] = useState<string>("");
+  const isSavingRef = useRef(false);
 
   const today = new Date();
   const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -37,21 +38,29 @@ const Sidebar = () => {
     if (typeof window === 'undefined') return;
     
     const loadData = async () => {
+      if (isSavingRef.current) return; // Don't reload while a save is in-flight
       try {
         const categoriesData = await api.getCategories();
         if (categoriesData && categoriesData.length > 0) {
           setCategories(categoriesData);
         }
-        
+
         const allEvents = await api.getEvents();
-        const todayEventsData = allEvents.filter(e => e.dateString === dateString);
+        const todayEventsRaw = allEvents.filter(e => e.dateString === dateString);
+        // Deduplicate by time+title
+        const seen = new Set<string>();
+        const todayEventsData = todayEventsRaw.filter(e => {
+          const key = `${e.time}|${e.title}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
         setTodayEvents(todayEventsData);
-        
+
         const parserTextData = await api.getParserTexts(dateString);
         setTodayText(parserTextData?.content || "");
       } catch (error) {
         console.error('Failed to load data', error);
-        // No fallback - API is required
       }
     };
     
@@ -67,11 +76,19 @@ const Sidebar = () => {
     
     try {
       const allEvents = await api.getEvents();
-      const todayEventsData = allEvents.filter(e => e.dateString === dateString);
-      
+      const todayEventsRaw = allEvents.filter(e => e.dateString === dateString);
+      // Deduplicate by time+title
+      const seenKeys = new Set<string>();
+      const todayEventsData = todayEventsRaw.filter(e => {
+        const key = `${e.time}|${e.title}`;
+        if (seenKeys.has(key)) return false;
+        seenKeys.add(key);
+        return true;
+      });
+
       const parserTextData = await api.getParserTexts(dateString);
       const todayTextData = parserTextData?.content || "";
-      
+
       setTodayEvents(todayEventsData);
       setTodayText(todayTextData);
       
@@ -83,19 +100,11 @@ const Sidebar = () => {
   };
 
   const handleSave = async (newEvents: Event[], rawText: string) => {
+    isSavingRef.current = true;
     try {
-      // Get all existing events
-      const allEvents = await api.getEvents();
-      
-      // Filter out today's events and add new ones
-      const filteredEvents = allEvents.filter(e => e.dateString !== dateString);
-      const updatedEvents = [...filteredEvents, ...newEvents];
-      
-      // Save all events to API
-      for (const event of updatedEvents) {
-        await api.saveEvent(event);
-      }
-      
+      // Atomic replace: delete old + insert new in a single DB transaction
+      await api.replaceEventsByDate(dateString, newEvents);
+
       // Save parser text to API
       try {
         await api.saveParserTexts({
@@ -106,20 +115,21 @@ const Sidebar = () => {
       } catch (error) {
         console.error('Failed to save parser text', error);
       }
-      
+
       setIsParserOpen(false);
-      
+
       // Update local state
       setTodayEvents(newEvents);
       setTodayText(rawText);
-      
-      // Notify other components
-      window.dispatchEvent(new CustomEvent('life26-update', { 
-        detail: { type: 'eventsUpdated', source: 'sidebar' } 
+
+      // Notify other components AFTER all DB writes are done
+      window.dispatchEvent(new CustomEvent('life26-update', {
+        detail: { type: 'eventsUpdated', source: 'sidebar' }
       }));
     } catch (error) {
       console.error('Failed to save events', error);
-      // No fallback - API is required
+    } finally {
+      isSavingRef.current = false;
     }
   };
 
