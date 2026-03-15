@@ -53,6 +53,14 @@ export const api = {
     }
   },
 
+  async deleteEventsByDate(dateString: string): Promise<void> {
+    const res = await fetch(`/api/events?dateString=${dateString}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Failed to delete events' }));
+      throw new Error(error.error || 'Failed to delete events');
+    }
+  },
+
   // Categories
   async getCategories(): Promise<Category[]> {
     const res = await fetch('/api/categories');

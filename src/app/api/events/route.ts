@@ -48,9 +48,15 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const dateString = searchParams.get('dateString');
+
+    if (dateString) {
+      await db.delete(events).where(eq(events.dateString, dateString));
+      return NextResponse.json({ success: true });
+    }
 
     if (!id) {
-      return NextResponse.json({ error: 'Event ID required' }, { status: 400 });
+      return NextResponse.json({ error: 'Event ID or dateString required' }, { status: 400 });
     }
 
     await db.delete(events).where(eq(events.id, id));

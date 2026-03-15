@@ -847,7 +847,17 @@ export default function SchedulePage() {
           onClose={() => setIsParserOpen(false)} onSave={async (newEvents: Event[], inputText: string) => {
             setEvents(prev => [...prev.filter(e => e.dateString !== dateString), ...newEvents]);
             setDailyParserTexts(prev => ({...prev, [dateString]: inputText}));
-            
+
+            // Delete old events for this date, then save new ones
+            try {
+              await api.deleteEventsByDate(dateString);
+              for (const event of newEvents) {
+                await api.saveEvent(event);
+              }
+            } catch (error) {
+              console.error('Failed to save parser events', error);
+            }
+
             // Save parser text to API
             try {
               await api.saveParserTexts({
@@ -858,7 +868,7 @@ export default function SchedulePage() {
             } catch (error) {
               console.error('Failed to save parser text', error);
             }
-            
+
             setIsParserOpen(false);
           }}
         />
