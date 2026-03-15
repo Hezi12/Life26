@@ -13,7 +13,11 @@ import {
   TrendingUp,
   AlertCircle,
   Plus,
-  RotateCcw
+  RotateCcw,
+  Brain,
+  Loader2,
+  X,
+  Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DailyMission } from "@/lib/types";
@@ -24,6 +28,13 @@ const MissionPage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [missions, setMissions] = useState<Record<string, DailyMission>>({});
   const [isLoaded, setIsLoaded] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState<{
+    mission: string;
+    reasoning: string;
+    based_on: string;
+    completion_criteria: string;
+  } | null>(null);
 
   const dateString = currentDate.toISOString().split('T')[0];
   const yesterday = new Date(currentDate);
@@ -94,6 +105,26 @@ const MissionPage = () => {
     } catch (error) {
       console.error('Failed to reset mission', error);
     }
+  };
+
+  const handleAiMission = async () => {
+    setAiLoading(true);
+    setAiResult(null);
+    try {
+      const result = await api.getMissionAI(dateString);
+      setAiResult(result);
+    } catch (error) {
+      console.error('AI mission failed:', error);
+      alert('שגיאה בקריאה ל-AI. נסה שוב.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const applyAiMission = async () => {
+    if (!aiResult) return;
+    await saveMission(dateString, { mission: aiResult.mission });
+    setAiResult(null);
   };
 
   const currentMission = missions[dateString] || { id: dateString, dateString, mission: "" };
@@ -294,7 +325,70 @@ const MissionPage = () => {
           <div className="flex-1 flex flex-col min-h-[300px] md:min-h-0 relative group animate-in fade-in slide-in-from-left-4 duration-700">
             <div className="absolute -right-0 top-0 h-12 w-[2px] bg-orange-500 transition-all duration-500 rounded-full" />
             <div className="flex-1 flex flex-col bg-zinc-900/10 border border-orange-500/10 focus-within:border-orange-500/20 p-6 md:p-8 transition-all relative overflow-hidden rounded-2xl md:rounded-sm shadow-sm md:shadow-none">
-              <div className="text-[9px] sm:text-[10px] text-orange-500/50 mb-4 sm:mb-6 uppercase font-black tracking-[0.3em] relative z-10">Core_Objective_Input</div>
+              <div className="flex items-center justify-between mb-4 sm:mb-6 relative z-10">
+                <div className="text-[9px] sm:text-[10px] text-orange-500/50 uppercase font-black tracking-[0.3em]">Core_Objective_Input</div>
+                <button
+                  onClick={handleAiMission}
+                  disabled={aiLoading}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 border rounded-full md:rounded-sm transition-all text-[9px] sm:text-[10px] font-black uppercase tracking-widest",
+                    aiLoading
+                      ? "border-purple-500/30 text-purple-500/50 cursor-wait"
+                      : "border-purple-500/20 text-purple-500 hover:border-purple-500/50 hover:bg-purple-500/5 hover:shadow-[0_0_15px_rgba(168,85,247,0.15)]"
+                  )}
+                >
+                  {aiLoading ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Brain size={12} />
+                  )}
+                  <span>{aiLoading ? "Analyzing..." : "AI_Extract"}</span>
+                </button>
+              </div>
+
+              {/* AI Result Panel */}
+              {aiResult && (
+                <div className="mb-4 sm:mb-6 relative z-10 animate-in fade-in slide-in-from-top-2 duration-500">
+                  <div className="bg-purple-500/[0.03] border border-purple-500/20 rounded-xl md:rounded-sm p-4 sm:p-5 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Sparkles size={12} className="text-purple-500" />
+                        <span className="text-[9px] text-purple-500/70 uppercase font-black tracking-[0.3em]">AI_Recommendation</span>
+                      </div>
+                      <button onClick={() => setAiResult(null)} className="text-zinc-700 hover:text-white transition-colors">
+                        <X size={14} />
+                      </button>
+                    </div>
+
+                    <div className="text-lg sm:text-xl font-black italic text-purple-400 leading-tight">
+                      &ldquo;{aiResult.mission}&rdquo;
+                    </div>
+
+                    <div className="space-y-2 pt-2 border-t border-purple-500/10">
+                      <div>
+                        <span className="text-[8px] text-purple-500/50 uppercase font-black tracking-widest">Reasoning</span>
+                        <p className="text-[11px] sm:text-xs text-zinc-400 mt-1 leading-relaxed">{aiResult.reasoning}</p>
+                      </div>
+                      <div>
+                        <span className="text-[8px] text-purple-500/50 uppercase font-black tracking-widest">Based_On</span>
+                        <p className="text-[11px] sm:text-xs text-zinc-500 mt-1 leading-relaxed">{aiResult.based_on}</p>
+                      </div>
+                      <div>
+                        <span className="text-[8px] text-purple-500/50 uppercase font-black tracking-widest">Done_When</span>
+                        <p className="text-[11px] sm:text-xs text-zinc-400 mt-1 leading-relaxed">{aiResult.completion_criteria}</p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={applyAiMission}
+                      className="w-full py-3 bg-purple-500 text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-purple-400 transition-all rounded-lg md:rounded-sm shadow-lg shadow-purple-500/20"
+                    >
+                      Apply_Mission
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <textarea
                 value={currentMission.mission}
                 onChange={(e) => saveMission(dateString, { mission: e.target.value })}

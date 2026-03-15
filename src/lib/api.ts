@@ -219,6 +219,24 @@ export const api = {
     });
   },
 
+  async getMissionAI(dateString: string): Promise<{
+    mission: string;
+    reasoning: string;
+    based_on: string;
+    completion_criteria: string;
+  }> {
+    const res = await fetch('/api/mission/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dateString }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Mission AI failed (${res.status})`);
+    }
+    return res.json();
+  },
+
   // Focus Sessions
   async getFocusSessions(): Promise<FocusSession[]> {
     const res = await fetch('/api/focus/session');
