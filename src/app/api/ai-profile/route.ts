@@ -3,11 +3,15 @@ import { db } from "@/lib/db";
 import { aiProfile } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     try {
-        const rows = await db.select().from(aiProfile).where(eq(aiProfile.id, 'main'));
+        const { searchParams } = new URL(req.url);
+        const type = searchParams.get('type') || 'profile';
+        const id = type === 'prompt' ? 'prompt' : 'main';
+
+        const rows = await db.select().from(aiProfile).where(eq(aiProfile.id, id));
         if (rows.length === 0) {
-            return NextResponse.json({ id: 'main', content: '', updatedAt: null });
+            return NextResponse.json({ id, content: '', updatedAt: null });
         }
         return NextResponse.json(rows[0]);
     } catch (error) {
@@ -19,11 +23,12 @@ export async function GET() {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { content } = body;
+        const { content, type } = body;
+        const id = type === 'prompt' ? 'prompt' : 'main';
 
         await db.insert(aiProfile)
             .values({
-                id: 'main',
+                id,
                 content,
                 updatedAt: new Date().toISOString(),
             })

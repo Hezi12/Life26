@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
-import { Play, Lock, Pencil, History, Check } from "lucide-react";
+import { Play, Lock, Pencil, History, Check, RefreshCw } from "lucide-react";
 import { cn, getDateString, getNowTime, timeToMinutes } from "@/lib/utils";
 import { FocusSession } from "@/lib/types";
 import { api } from "@/lib/api";
@@ -193,6 +193,47 @@ export default function FocusPage() {
     }
   };
 
+  const regenerateFeedback = async () => {
+    const sorted = [...completedSessions].sort((a, b) => b.sessionNumber - a.sessionNumber);
+    const latest = sorted[0];
+    if (!latest) return;
+
+    setAiLoading(true);
+    setAiError(null);
+
+    const aiInput = latest.notes?.trim() || `מיקוד ${latest.sessionNumber}, משך: ${latest.startTime} עד ${latest.endTime}`;
+    const history = completedSessions
+      .filter((s) => s.id !== latest.id)
+      .map((s) => ({
+        sessionNumber: s.sessionNumber,
+        dateString: s.dateString,
+        startTime: s.startTime,
+        endTime: s.endTime,
+        notes: s.notes,
+        aiSummary: s.aiSummary,
+        aiAffirmation: s.aiAffirmation,
+      }));
+
+    try {
+      const result = await api.getFocusAI(aiInput, history);
+      if (result && result.summary) {
+        await api.updateFocusSession({
+          id: latest.id,
+          aiSummary: result.summary,
+          aiAffirmation: result.affirmation,
+        });
+        await loadSessions();
+      } else {
+        setAiError("תגובה ריקה מה-AI");
+      }
+    } catch (e: any) {
+      console.error("AI regenerate failed", e);
+      setAiError(e?.message || "שגיאה בקבלת משוב");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   // --- Render ---
   if (!isLoaded) {
     return (
@@ -212,10 +253,10 @@ export default function FocusPage() {
     return (
       <div className="h-screen overflow-hidden bg-black flex flex-col items-center px-4 pt-safe" dir="rtl">
 
-        {/* Top section — AI feedback, scrollable if long */}
-        <div className="flex-1 flex flex-col justify-end items-center w-full max-w-md overflow-hidden pb-8">
+        {/* Top section — AI feedback */}
+        <div className="flex-1 flex flex-col justify-end items-center w-full max-w-2xl overflow-hidden pb-4 px-2">
           {showFeedback && (
-            <div className="w-full overflow-y-auto max-h-full">
+            <div className="w-full">
               {aiLoading && (
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-1 mb-3">
@@ -223,7 +264,7 @@ export default function FocusPage() {
                     <div className="w-1 h-1 bg-orange-500 rounded-full animate-pulse" style={{ animationDelay: "0.3s" }} />
                     <div className="w-1 h-1 bg-orange-500 rounded-full animate-pulse" style={{ animationDelay: "0.6s" }} />
                   </div>
-                  <p className="text-xs font-mono text-zinc-600">השותף האסטרטגי מעבד...</p>
+                  <p className="text-xs font-mono text-zinc-600">AIX מעבד...</p>
                 </div>
               )}
               {aiError && !aiLoading && (
@@ -232,15 +273,29 @@ export default function FocusPage() {
                 </div>
               )}
               {!aiLoading && !aiError && latestFeedback && (
-                <div className="space-y-3">
-                  {latestFeedback.summary.split("\n\n").map((block, i) => (
-                    <p key={i} className="text-[11px] md:text-[13px] text-zinc-500 leading-relaxed text-right whitespace-pre-line">{renderMarkdown(block)}</p>
-                  ))}
-                  {latestFeedback.affirmation && (
-                    <div className="border-r-2 border-orange-500/40 pr-3 mt-4">
-                      <p className="text-[11px] md:text-[13px] text-orange-400/80 leading-relaxed text-right">{renderMarkdown(latestFeedback.affirmation)}</p>
-                    </div>
-                  )}
+                <div className="w-full p-4 md:p-5">
+                  {/* Feedback sections */}
+                  <div className="space-y-2.5">
+                    {latestFeedback.summary.split("\n\n").map((block, i) => (
+                      <p key={i} className="text-[11px] md:text-[12.5px] text-zinc-400 leading-[1.7] text-right whitespace-pre-line">{renderMarkdown(block)}</p>
+                    ))}
+                  </div>
+
+                  {/* Affirmation + regenerate */}
+                  <div className="mt-3 pt-3 border-t border-zinc-800/40 flex items-start gap-2">
+                    {latestFeedback.affirmation && (
+                      <div className="flex-1 border-r-2 border-orange-500/50 pr-3">
+                        <p className="text-[11px] md:text-[12.5px] text-orange-400/90 leading-[1.7] text-right">{renderMarkdown(latestFeedback.affirmation)}</p>
+                      </div>
+                    )}
+                    <button
+                      onClick={regenerateFeedback}
+                      className="text-zinc-700 hover:text-orange-500 transition-colors p-1 mt-0.5 shrink-0"
+                      title="משוב חדש"
+                    >
+                      <RefreshCw size={12} />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -302,42 +357,9 @@ export default function FocusPage() {
             <span className="text-sm font-black text-white tracking-tight">מיקוד {activeSession.sessionNumber}</span>
           </div>
           <div className="flex items-center gap-1.5 mt-1 mr-4">
-            {editingStart ? (
-              <>
-                <input
-                  type="time"
-                  value={activeSession.startTime}
-                  onChange={(e) => setActiveSession({ ...activeSession, startTime: e.target.value })}
-                  className="text-[10px] font-mono text-orange-400 bg-orange-500/10 outline-none w-[3.5rem] px-1 py-0.5 rounded"
-                  autoFocus
-                />
-                <span className="text-[10px] font-mono text-zinc-700">·</span>
-                <input
-                  type="date"
-                  value={activeSession.dateString}
-                  onChange={(e) => setActiveSession({ ...activeSession, dateString: e.target.value })}
-                  className="text-[10px] font-mono text-orange-400 bg-orange-500/10 outline-none px-1 py-0.5 rounded"
-                />
-                <button
-                  onClick={() => setEditingStart(false)}
-                  className="text-orange-500 hover:text-orange-400 transition-colors mr-1"
-                >
-                  <Check size={10} />
-                </button>
-              </>
-            ) : (
-              <>
-                <span className="text-[10px] font-mono text-zinc-600">
-                  {activeSession.startTime} · {activeSession.dateString}
-                </span>
-                <button
-                  onClick={() => setEditingStart(true)}
-                  className="text-zinc-700 hover:text-zinc-500 transition-colors"
-                >
-                  <Pencil size={9} />
-                </button>
-              </>
-            )}
+            <span className="text-[10px] font-mono text-zinc-600">
+              {activeSession.startTime} · {activeSession.dateString}
+            </span>
           </div>
         </div>
 

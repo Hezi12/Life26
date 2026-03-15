@@ -153,12 +153,18 @@ export default function LawsPage() {
   };
 
   const trackingDays = useMemo(() => {
-    // Show 3 days back + today + 4 days forward = 8 days
+    // Find the earliest startDate among active laws
+    const earliestStart = activeLaws.length > 0
+      ? activeLaws.reduce((min, l) => l.startDate < min ? l.startDate : min, activeLaws[0].startDate)
+      : todayString;
+
+    // Show from 3 days back (but not before earliest law start) + today + 4 days forward
     const days = [];
     for (let i = -3; i <= 4; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() + i);
       const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      if (ds < earliestStart) continue;
       days.push({
         date: d,
         dateString: ds,
@@ -168,7 +174,7 @@ export default function LawsPage() {
       });
     }
     return days;
-  }, [todayString]);
+  }, [todayString, activeLaws]);
 
   const streak = useMemo(() => {
     if (activeLaws.length === 0) return 0;

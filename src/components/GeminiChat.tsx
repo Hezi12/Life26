@@ -254,8 +254,8 @@ export function GeminiChat({ onClose }: GeminiChatProps) {
                                 <Sparkles size={20} className="text-white" />
                             </div>
                             <div>
-                                <h2 className="text-lg font-semibold text-white">Gemini 2.5 Pro</h2>
-                                <p className="text-xs text-zinc-400">Advanced AI Assistant</p>
+                                <h2 className="text-lg font-semibold text-white">AIX</h2>
+                                <p className="text-xs text-zinc-400">Cognitive Architect</p>
                             </div>
                         </div>
                         <button

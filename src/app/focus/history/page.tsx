@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { ChevronDown, ChevronUp, Trash2, Brain, Pencil, Check, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash2, Brain, Pencil, Check, X, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FocusSession, AiProfile } from "@/lib/types";
 import { api } from "@/lib/api";
@@ -30,6 +30,12 @@ export default function FocusHistoryPage() {
   const [editingTimeId, setEditingTimeId] = useState<string | null>(null);
   const [editStart, setEditStart] = useState("");
   const [editEnd, setEditEnd] = useState("");
+
+  // Prompt editor state
+  const [showPromptModal, setShowPromptModal] = useState(false);
+  const [promptContent, setPromptContent] = useState("");
+  const [promptDraft, setPromptDraft] = useState("");
+  const [promptSaving, setPromptSaving] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -80,6 +86,31 @@ export default function FocusHistoryPage() {
     }
   };
 
+  const openPromptModal = async () => {
+    try {
+      const data = await api.getAiPrompt();
+      setPromptContent(data.content);
+      setPromptDraft(data.content);
+    } catch {
+      setPromptContent("");
+      setPromptDraft("");
+    }
+    setShowPromptModal(true);
+  };
+
+  const handleSavePrompt = async () => {
+    setPromptSaving(true);
+    try {
+      await api.saveAiPrompt(promptDraft);
+      setPromptContent(promptDraft);
+      setShowPromptModal(false);
+    } catch (e) {
+      console.error("Failed to save prompt", e);
+    } finally {
+      setPromptSaving(false);
+    }
+  };
+
   if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -92,15 +123,73 @@ export default function FocusHistoryPage() {
 
   return (
     <div className="min-h-screen bg-black px-4 py-6 md:px-8 md:py-10" dir="rtl">
+      {/* Prompt Editor Modal */}
+      {showPromptModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
+          <div className="w-full max-w-2xl bg-zinc-950 border border-zinc-800 rounded-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
+              <div className="flex items-center gap-2">
+                <Settings2 size={16} className="text-orange-500" />
+                <span className="text-sm font-black text-white tracking-tight">הוראות AIX</span>
+              </div>
+              <button
+                onClick={() => setShowPromptModal(false)}
+                className="text-zinc-600 hover:text-zinc-300 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              <textarea
+                value={promptDraft}
+                onChange={(e) => setPromptDraft(e.target.value)}
+                className="w-full bg-zinc-900 text-sm text-zinc-300 font-mono leading-relaxed rounded-lg p-4 outline-none resize-none min-h-[400px] border border-zinc-700 focus:border-orange-500/50"
+                dir="rtl"
+                placeholder="הזן את הוראות המערכת עבור AIX..."
+              />
+            </div>
+            <div className="flex items-center justify-between px-5 py-4 border-t border-zinc-800">
+              <span className="text-[10px] font-mono text-zinc-700">
+                {promptDraft.length} תווים
+              </span>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowPromptModal(false)}
+                  className="px-4 py-2 text-xs font-mono text-zinc-500 hover:text-zinc-300 transition-colors"
+                >
+                  ביטול
+                </button>
+                <button
+                  onClick={handleSavePrompt}
+                  disabled={promptSaving}
+                  className="px-5 py-2 bg-orange-500 text-black text-xs font-black rounded-lg hover:bg-orange-400 transition-colors disabled:opacity-50"
+                >
+                  {promptSaving ? "שומר..." : "שמור"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-lg font-black text-white tracking-tight">
             היסטוריית מיקודים
           </h1>
-          <span className="text-xs font-mono text-zinc-600">
-            {completed.length} מיקודים
-          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={openPromptModal}
+              className="text-zinc-700 hover:text-orange-500 transition-colors"
+              title="הוראות AIX"
+            >
+              <Settings2 size={18} />
+            </button>
+            <span className="text-xs font-mono text-zinc-600">
+              {completed.length} מיקודים
+            </span>
+          </div>
         </div>
 
         {/* AI Profile Card */}
@@ -117,7 +206,7 @@ export default function FocusHistoryPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Brain size={16} className="text-orange-500" />
-              <span className="text-sm font-mono text-orange-400">הפרופיל הפנימי של ה-AI</span>
+              <span className="text-sm font-mono text-orange-400">הפרופיל הפנימי של AIX</span>
             </div>
             {showProfile ? (
               <ChevronUp size={14} className="text-zinc-600" />
@@ -217,7 +306,7 @@ export default function FocusHistoryPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         {session.aiSummary && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500/60" title="יש משוב AI" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500/60" title="יש משוב AIX" />
                         )}
                         {isExpanded ? (
                           <ChevronUp size={14} className="text-zinc-600" />
@@ -293,7 +382,7 @@ export default function FocusHistoryPage() {
                       {/* AI Summary */}
                       {session.aiSummary && (
                         <div className="border-t border-zinc-800/50 pt-3">
-                          <p className="text-[10px] font-mono text-orange-500/60 mb-1">משוב AI</p>
+                          <p className="text-[10px] font-mono text-orange-500/60 mb-1">משוב AIX</p>
                           <div className="space-y-2">
                             {session.aiSummary.split("\n\n").map((block, i) => (
                               <p key={i} className="text-sm text-zinc-400 leading-relaxed whitespace-pre-line">

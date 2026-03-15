@@ -328,6 +328,20 @@ export const api = {
     });
   },
 
+  async getAiPrompt(): Promise<AiProfile> {
+    const res = await fetch('/api/ai-profile?type=prompt');
+    if (!res.ok) throw new Error('Failed to fetch AI prompt');
+    return res.json();
+  },
+
+  async saveAiPrompt(content: string): Promise<void> {
+    await fetch('/api/ai-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, type: 'prompt' }),
+    });
+  },
+
   // DIAMETRIX Meetings
   async getDiametrixMeetings(): Promise<DiametrixMeeting[]> {
     const res = await fetch('/api/diametrix/meetings');
