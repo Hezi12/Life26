@@ -4,10 +4,10 @@ const urlsToCache = [
   '/',
   '/schedule',
   '/computer',
-  '/habits',
   '/mission',
   '/focus',
-  '/design-system',
+  '/laws',
+  '/analytics',
 ];
 
 self.addEventListener('install', (event: any) => {

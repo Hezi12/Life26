@@ -24,6 +24,8 @@ import {
   Moon,
   Smartphone,
   Gamepad2,
+  Calendar,
+  Flame,
 } from "lucide-react";
 import { cn, timeToMinutes, minutesToTime, calculateDuration } from "@/lib/utils";
 import {
@@ -37,6 +39,7 @@ import {
   FocusSession,
   Law,
   LawLog,
+  DailyMission,
 } from "@/lib/types";
 import { ICON_MAP, INITIAL_CATEGORIES } from "@/lib/constants";
 import { api } from '@/lib/api';
@@ -59,9 +62,11 @@ export default function HomePage() {
   });
   const [isLoaded, setIsLoaded] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [nextFocusInfo, setNextFocusInfo] = useState<{ time?: string; date?: string } | null>(null);
+  const [nextFocusInfo, setNextFocusInfo] = useState<{ time?: string; date?: string; total?: number } | null>(null);
   const [laws, setLaws] = useState<Law[]>([]);
   const [lawLogs, setLawLogs] = useState<Record<string, LawLog>>({});
+  const [todayMission, setTodayMission] = useState<DailyMission | null>(null);
+  const [missionStreak, setMissionStreak] = useState(0);
 
   // Persistent tracker for Pomodoro sounds (defined in parent to survive unmounts)
   const lastActiveCycleRef = useRef<{type: 'work' | 'break', end: number} | null>(null);
@@ -111,18 +116,47 @@ export default function HomePage() {
         setPomodoroSettings(pomodoroData);
 
         const dailyNotesData = await api.getDailyNotes(dateString);
-        if (dailyNotesData) setDailyNotes(dailyNotesData);
+        if (dailyNotesData) {
+          setDailyNotes(dailyNotesData);
+          if (dailyNotesRef.current) {
+            dailyNotesRef.current.value = dailyNotesData.content || '';
+            requestAnimationFrame(() => {
+              if (dailyNotesRef.current) {
+                dailyNotesRef.current.scrollTop = dailyNotesRef.current.scrollHeight;
+              }
+            });
+          }
+        }
 
         const stickyNotesData = await api.getStickyNotes();
         if (stickyNotesData) setStickyNotes(stickyNotesData);
 
         // Load focus next session info
         const focusSessions = await api.getFocusSessions();
-        const lastCompleted = focusSessions
-          .filter((s: FocusSession) => s.status === 'completed')
+        const completedFocus = focusSessions.filter((s: FocusSession) => s.status === 'completed');
+        const lastCompleted = completedFocus
           .sort((a: FocusSession, b: FocusSession) => b.sessionNumber - a.sessionNumber)[0];
         if (lastCompleted?.nextFocusTime) {
-          setNextFocusInfo({ time: lastCompleted.nextFocusTime, date: lastCompleted.nextFocusDate });
+          setNextFocusInfo({ time: lastCompleted.nextFocusTime, date: lastCompleted.nextFocusDate, total: completedFocus.length });
+        } else {
+          setNextFocusInfo({ total: completedFocus.length });
+        }
+
+        // Load today's mission
+        const allMissions = await api.getMissions();
+        if (Array.isArray(allMissions)) {
+          const todayM = allMissions.find((m: DailyMission) => m.dateString === dateString);
+          if (todayM) setTodayMission(todayM);
+          // Calculate streak
+          let streak = 0;
+          const checkDate = new Date();
+          while (true) {
+            const dStr = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
+            const m = allMissions.find((x: DailyMission) => x.dateString === dStr && x.mission);
+            if (m) { streak++; checkDate.setDate(checkDate.getDate() - 1); }
+            else break;
+          }
+          setMissionStreak(streak);
         }
 
         // Load laws
@@ -478,60 +512,96 @@ export default function HomePage() {
   return (
     <div className="h-screen overflow-hidden flex flex-col bg-black text-white font-mono selection:bg-orange-500/30 selection:text-white pt-safe" dir="rtl">
       {!activeSession ? (
-        <div className="flex-1 bg-black flex flex-col items-center p-4 sm:p-8 md:p-12 relative overflow-auto pb-32">
-          {/* Background subtle grid for texture */}
-          <div className="absolute inset-0 bg-[radial-gradient(#ffffff03_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
+        <div className="flex-1 bg-black flex flex-col overflow-auto pb-32 pt-safe" dir="rtl">
+          {/* Background */}
+          <div className="fixed inset-0 bg-[radial-gradient(#ffffff03_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
 
-          <div className="max-w-5xl w-full flex flex-col gap-6 sm:gap-8 md:gap-10 animate-in fade-in zoom-in-95 duration-1000">
-            {/* Life Matrix */}
-            <div className="grid grid-cols-[repeat(40,minmax(0,1fr))] md:grid-cols-[repeat(80,minmax(0,1fr))] grid-rows-[repeat(104,minmax(0,1fr))] md:grid-rows-[repeat(52,minmax(0,1fr))] grid-flow-col gap-1 md:gap-1.5 p-4 md:p-4 bg-white/[0.01] border border-white/[0.02] rounded-2xl md:rounded-sm relative group overflow-auto max-h-[60vh] md:max-h-none">
-              {Array.from({ length: 4160 }).map((_, i) => {
-                const isCurrent = i === weeksExpired;
-                const isPast = i < weeksExpired;
+          <div className="max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-4 sm:gap-5 animate-in fade-in duration-700 relative z-10">
 
-                return (
-                  <div
-                    key={i}
-                    className={cn(
-                      "w-1 h-1 md:w-1 md:h-1 rounded-full transition-all duration-300",
-                      isCurrent
-                        ? "bg-orange-500 animate-pulse scale-150 shadow-[0_0_10px_#f97316]"
-                        : isPast
-                          ? "bg-zinc-800"
-                          : "bg-white/[0.08]"
-                    )}
-                  />
-                );
-              })}
+            {/* Top Row: Clock + Date */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-lg font-black italic tracking-tighter text-white">LIFE26</h1>
+                <div className="text-[10px] text-zinc-600 font-mono">
+                  {isLoaded ? new Intl.DateTimeFormat('he-IL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(currentTime) : "..."}
+                </div>
+              </div>
+              <div className="text-left">
+                <div className="text-3xl font-black tabular-nums text-white tracking-tight leading-none">
+                  {String(currentTime.getHours()).padStart(2, '0')}:{String(currentTime.getMinutes()).padStart(2, '0')}
+                </div>
+                <div className="text-xs text-zinc-700 tabular-nums font-mono text-left">
+                  :{String(currentTime.getSeconds()).padStart(2, '0')}
+                </div>
+              </div>
             </div>
 
-            {/* Widgets */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 relative z-10">
-              {/* Next Focus Widget */}
-              <div className="border border-zinc-800/50 rounded-xl p-4 bg-zinc-950/50">
+            {/* Quick Stats Row */}
+            <div className="grid grid-cols-4 gap-2">
+              <div className="border border-zinc-800/50 rounded-xl p-3 bg-zinc-900/20">
+                <Target size={12} className="text-orange-500 mb-1.5" />
+                <div className="text-lg font-black italic text-orange-500 leading-none">{nextFocusInfo?.total || 0}</div>
+                <div className="text-[8px] text-zinc-600 uppercase tracking-wider mt-1">מיקודים</div>
+              </div>
+              <div className="border border-zinc-800/50 rounded-xl p-3 bg-zinc-900/20">
+                <Flame size={12} className="text-[#00d4ff] mb-1.5" />
+                <div className="text-lg font-black italic text-[#00d4ff] leading-none">{missionStreak}D</div>
+                <div className="text-[8px] text-zinc-600 uppercase tracking-wider mt-1">רצף</div>
+              </div>
+              <div className="border border-zinc-800/50 rounded-xl p-3 bg-zinc-900/20">
+                <Shield size={12} className="text-emerald-400 mb-1.5" />
+                <div className="text-lg font-black italic text-emerald-400 leading-none">
+                  {activeLaws.filter(l => lawLogs[`${l.id}-${todayString}`]?.kept === true).length}/{activeLaws.length}
+                </div>
+                <div className="text-[8px] text-zinc-600 uppercase tracking-wider mt-1">חוקים</div>
+              </div>
+              <div className="border border-zinc-800/50 rounded-xl p-3 bg-zinc-900/20">
+                <Calendar size={12} className="text-purple-400 mb-1.5" />
+                <div className="text-lg font-black italic text-purple-400 leading-none">{dailyEvents.length}</div>
+                <div className="text-[8px] text-zinc-600 uppercase tracking-wider mt-1">אירועים</div>
+              </div>
+            </div>
+
+            {/* Today's Mission */}
+            <div className="border border-zinc-800/50 rounded-xl p-4 bg-zinc-900/10 relative overflow-hidden">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap size={13} className="text-[#00d4ff]" />
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500">Mission</span>
+              </div>
+              {todayMission?.mission ? (
+                <div className="text-sm font-bold text-white leading-relaxed">{todayMission.mission}</div>
+              ) : (
+                <div className="text-xs text-zinc-700 italic">לא הוגדרה משימה להיום</div>
+              )}
+            </div>
+
+            {/* Next Focus + Laws Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Next Focus */}
+              <div className="border border-zinc-800/50 rounded-xl p-4 bg-zinc-900/10">
                 <div className="flex items-center gap-2 mb-3">
-                  <Target size={14} className="text-orange-500" />
-                  <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Next Focus</span>
+                  <Target size={13} className="text-orange-500" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500">Next Focus</span>
                 </div>
                 {nextFocusInfo?.time ? (
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-black text-white tabular-nums">{nextFocusInfo.time}</span>
                     {nextFocusInfo.date && nextFocusInfo.date !== todayString && (
-                      <span className="text-xs font-mono text-zinc-600">{nextFocusInfo.date}</span>
+                      <span className="text-xs text-zinc-600 font-mono">מחר</span>
                     )}
                   </div>
                 ) : (
-                  <span className="text-sm text-zinc-700 font-mono">Not set</span>
+                  <span className="text-sm text-zinc-700">לא נקבע</span>
                 )}
               </div>
 
-              {/* Laws Widget */}
-              <div className="border border-zinc-800/50 rounded-xl p-4 bg-zinc-950/50">
+              {/* Laws Quick Toggle */}
+              <div className="border border-zinc-800/50 rounded-xl p-4 bg-zinc-900/10">
                 <div className="flex items-center gap-2 mb-3">
-                  <Shield size={14} className="text-orange-500" />
-                  <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">3 Laws</span>
+                  <Shield size={13} className="text-emerald-400" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500">3 Laws</span>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   {activeLaws.map((law) => {
                     const logId = `${law.id}-${todayString}`;
                     const log = lawLogs[logId];
@@ -540,29 +610,30 @@ export default function HomePage() {
 
                     return (
                       <div key={law.id} className="flex items-center gap-1.5">
-                        <Icon size={12} style={{ color }} />
-                        <span className="text-xs font-mono text-zinc-500">{law.position}</span>
+                        <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ backgroundColor: `${color}12` }}>
+                          <Icon size={12} style={{ color }} />
+                        </div>
                         <button
                           onClick={() => toggleLawLog(law.id, true)}
                           className={cn(
-                            "w-5 h-5 rounded flex items-center justify-center transition-colors",
+                            "w-6 h-6 rounded-md border flex items-center justify-center transition-all",
                             log?.kept === true
-                              ? "bg-emerald-500/20 text-emerald-400"
-                              : "text-zinc-700 hover:text-zinc-400"
+                              ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
+                              : "border-zinc-800/60 text-zinc-700 hover:border-emerald-500/30"
                           )}
                         >
-                          <Check size={10} />
+                          <Check size={11} strokeWidth={3} />
                         </button>
                         <button
                           onClick={() => toggleLawLog(law.id, false)}
                           className={cn(
-                            "w-5 h-5 rounded flex items-center justify-center transition-colors",
+                            "w-6 h-6 rounded-md border flex items-center justify-center transition-all",
                             log && log.kept === false
-                              ? "bg-red-500/20 text-red-400"
-                              : "text-zinc-700 hover:text-zinc-400"
+                              ? "bg-red-500/20 border-red-500/40 text-red-400"
+                              : "border-zinc-800/60 text-zinc-700 hover:border-red-500/30"
                           )}
                         >
-                          <X size={10} />
+                          <X size={11} strokeWidth={3} />
                         </button>
                       </div>
                     );
@@ -570,6 +641,123 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
+
+            {/* Today's Timeline */}
+            {dailyEvents.length > 0 && (
+              <div className="border border-zinc-800/50 rounded-xl p-4 bg-zinc-900/10">
+                <div className="flex items-center gap-2 mb-3">
+                  <Clock size={13} className="text-zinc-500" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500">Timeline</span>
+                </div>
+                <div className="space-y-1.5">
+                  {dailyEvents.slice(0, 8).map((event) => {
+                    const category = categories.find(c => c.id === event.categoryId);
+                    const nowMins = currentTime.getHours() * 60 + currentTime.getMinutes();
+                    const eventMins = timeToMinutes(event.time);
+                    const nextEvent = dailyEvents[dailyEvents.indexOf(event) + 1];
+                    const endMins = nextEvent ? timeToMinutes(nextEvent.time) : eventMins + 60;
+                    const isCurrent = nowMins >= eventMins && nowMins < endMins;
+                    const isPast = nowMins >= endMins;
+
+                    return (
+                      <div key={event.id} className={cn(
+                        "flex items-center gap-3 py-1.5 px-2 rounded-lg transition-all",
+                        isCurrent ? "bg-orange-500/[0.06] border border-orange-500/20" : "",
+                        isPast ? "opacity-40" : ""
+                      )}>
+                        <span className={cn(
+                          "text-[11px] font-mono tabular-nums w-12",
+                          isCurrent ? "text-orange-500 font-bold" : "text-zinc-600"
+                        )}>
+                          {event.time}
+                        </span>
+                        <div
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: category?.color || '#333' }}
+                        />
+                        <span className={cn(
+                          "text-xs truncate",
+                          isCurrent ? "text-white font-bold" : "text-zinc-400"
+                        )}>
+                          {event.title}
+                        </span>
+                        {isCurrent && (
+                          <div className="mr-auto w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Notes Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Daily Notes */}
+              <div className="border border-zinc-800/50 rounded-xl p-4 bg-zinc-900/10">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-1 h-3 bg-orange-500 rounded-full" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500">יומן</span>
+                </div>
+                <textarea
+                  ref={dailyNotesRef}
+                  defaultValue={dailyNotes?.content || ''}
+                  onFocus={() => { isTypingRef.current = true; }}
+                  onBlur={() => { isTypingRef.current = false; saveDailyNotes(); }}
+                  className="w-full h-32 bg-transparent text-sm text-zinc-300 font-mono leading-relaxed resize-none outline-none placeholder:text-zinc-800 scrollbar-hide"
+                  placeholder="כתוב כאן..."
+                />
+              </div>
+
+              {/* Sticky Notes */}
+              <div className="border border-zinc-800/50 rounded-xl p-4 bg-zinc-900/10">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-1 h-3 bg-zinc-700 rounded-full" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500">פתקים</span>
+                </div>
+                <textarea
+                  ref={stickyNotesRef}
+                  defaultValue={stickyNotes?.content || ''}
+                  onFocus={() => { isTypingRef.current = true; }}
+                  onBlur={() => { isTypingRef.current = false; saveStickyNotes(); }}
+                  className="w-full h-32 bg-transparent text-sm text-zinc-500 font-mono leading-relaxed resize-none outline-none placeholder:text-zinc-800 scrollbar-hide"
+                  placeholder="פתקים קבועים..."
+                />
+              </div>
+            </div>
+
+            {/* Life Matrix - Compact */}
+            <div className="border border-zinc-800/30 rounded-xl p-4 bg-zinc-900/5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Activity size={12} className="text-zinc-600" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600">Life Matrix</span>
+                </div>
+                <span className="text-[9px] text-zinc-700 font-mono tabular-nums">
+                  שבוע {weeksExpired.toLocaleString()} / 4,160
+                </span>
+              </div>
+              <div className="grid grid-cols-[repeat(52,minmax(0,1fr))] md:grid-cols-[repeat(80,minmax(0,1fr))] grid-flow-row gap-[2px] overflow-hidden max-h-[120px] md:max-h-[160px]">
+                {Array.from({ length: 4160 }).map((_, i) => {
+                  const isCurrent = i === weeksExpired;
+                  const isPast = i < weeksExpired;
+                  return (
+                    <div
+                      key={i}
+                      className={cn(
+                        "aspect-square rounded-[1px]",
+                        isCurrent
+                          ? "bg-orange-500 shadow-[0_0_6px_#f97316]"
+                          : isPast
+                            ? "bg-zinc-800"
+                            : "bg-white/[0.04]"
+                      )}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+
           </div>
         </div>
       ) : (
@@ -849,11 +1037,11 @@ export default function HomePage() {
                       ref={dailyNotesRef}
                       defaultValue={dailyNotes?.content || ''}
                       onFocus={() => { isTypingRef.current = true; }}
-                      onBlur={() => { 
+                      onBlur={() => {
                         isTypingRef.current = false;
                         saveDailyNotes();
                       }}
-                      className="w-full h-full bg-transparent text-zinc-300 text-sm sm:text-[15px] font-mono leading-[1.8] p-0 resize-none outline-none placeholder:text-zinc-900 font-medium scrollbar-hide"
+                      className="w-full h-full bg-transparent text-zinc-300 text-sm sm:text-[15px] font-mono leading-[1.8] p-0 pb-[50%] resize-none outline-none placeholder:text-zinc-900 font-medium scrollbar-hide"
                       placeholder="כתוב כאן..."
                     />
                   </div>

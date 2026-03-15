@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import { PinLock } from "@/components/PinLock";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -46,12 +47,14 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} bg-black text-white antialiased h-full transition-colors duration-500`}>
         <ServiceWorkerRegistration />
-        <main className="min-h-full mr-0 md:mr-16 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0 overflow-y-auto">
-          <div className="min-h-full">
-            {children}
-          </div>
-        </main>
-        <Sidebar />
+        <PinLock>
+          <main className="min-h-full mr-0 md:mr-16 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0 overflow-y-auto">
+            <div className="min-h-full">
+              {children}
+            </div>
+          </main>
+          <Sidebar />
+        </PinLock>
       </body>
     </html>
   );

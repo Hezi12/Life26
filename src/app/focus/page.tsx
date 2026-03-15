@@ -220,7 +220,7 @@ export default function FocusPage() {
     const showFeedback = aiLoading || aiError || latestFeedback;
 
     return (
-      <div className="h-screen overflow-hidden bg-black flex flex-col items-center px-4" dir="rtl">
+      <div className="h-screen overflow-hidden bg-black flex flex-col items-center px-4 pt-safe" dir="rtl">
 
         {/* Top section — AI feedback, scrollable if long */}
         <div className="flex-1 flex flex-col justify-end items-center w-full max-w-md overflow-hidden pb-8">
@@ -303,7 +303,7 @@ export default function FocusPage() {
   const lockDefaultPreset = PRESET_TIMES.find((t) => timeToMinutes(t) > nowMin) || PRESET_TIMES[0];
 
   return (
-    <div className="h-screen overflow-hidden bg-black px-4 py-6 md:px-8 md:py-10" dir="rtl">
+    <div className="h-screen overflow-hidden bg-black px-4 py-6 md:px-8 md:py-10 pt-safe" dir="rtl">
       {/* Top bar */}
       <div className="flex items-center justify-between mb-8">
         <div>

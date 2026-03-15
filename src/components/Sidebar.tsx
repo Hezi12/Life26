@@ -11,7 +11,9 @@ import {
   Palette,
   Zap,
   Plus,
-  Shield
+  Shield,
+  BarChart3,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ParserModal } from "./ParserModal";
@@ -141,7 +143,7 @@ const Sidebar = () => {
     { href: "/mission", icon: Zap, label: "Mission" },
     { href: "/computer", icon: Monitor, label: "Computer" },
     { href: "/laws", icon: Shield, label: "Laws" },
-    { href: "/design-system", icon: Palette, label: "Design" },
+    { href: "/analytics", icon: BarChart3, label: "Analytics" },
   ];
 
   return (
@@ -201,6 +203,18 @@ const Sidebar = () => {
 
         <div className="mt-auto pb-4 flex flex-col items-center gap-6">
           <button
+            onClick={() => {
+              const a = document.createElement("a");
+              a.href = "/api/export";
+              a.download = `life26-backup-${new Date().toISOString().split("T")[0]}.json`;
+              a.click();
+            }}
+            className="w-8 h-8 flex items-center justify-center text-zinc-700 hover:text-emerald-500 transition-all duration-300 group"
+            title="גיבוי נתונים"
+          >
+            <Download size={16} className="group-hover:drop-shadow-[0_0_8px_currentColor]" strokeWidth={1.5} />
+          </button>
+          <button
             onClick={async () => {
               await getTodayData();
               setIsParserOpen(true);
@@ -227,7 +241,7 @@ const Sidebar = () => {
           />
         </Link>
         
-        {navItems.filter(item => item.href !== '/design-system' && item.href !== '/computer').map((item) => {
+        {navItems.filter(item => item.href !== '/computer').map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
           
