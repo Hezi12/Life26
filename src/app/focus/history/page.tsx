@@ -30,6 +30,8 @@ export default function FocusHistoryPage() {
   const [editingTimeId, setEditingTimeId] = useState<string | null>(null);
   const [editStart, setEditStart] = useState("");
   const [editEnd, setEditEnd] = useState("");
+  const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
+  const [notesDraft, setNotesDraft] = useState("");
 
   // Prompt editor state
   const [showPromptModal, setShowPromptModal] = useState(false);
@@ -73,6 +75,18 @@ export default function FocusHistoryPage() {
       setEditingTimeId(null);
     } catch (e) {
       console.error("Failed to update times", e);
+    }
+  };
+
+  const handleSaveNotes = async (id: string) => {
+    try {
+      await api.updateFocusSession({ id, notes: notesDraft });
+      setSessions((prev) =>
+        prev.map((s) => s.id === id ? { ...s, notes: notesDraft } : s)
+      );
+      setEditingNotesId(null);
+    } catch (e) {
+      console.error("Failed to update notes", e);
     }
   };
 
@@ -370,14 +384,51 @@ export default function FocusHistoryPage() {
                       </div>
 
                       {/* Notes */}
-                      {session.notes && (
-                        <div>
-                          <p className="text-[10px] font-mono text-zinc-600 mb-1">הערות</p>
-                          <p className="text-sm text-zinc-400 leading-relaxed whitespace-pre-line">
-                            {session.notes}
-                          </p>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-[10px] font-mono text-zinc-600">הערות</p>
+                          {editingNotesId !== session.id && (
+                            <button
+                              onClick={() => {
+                                setNotesDraft(session.notes || "");
+                                setEditingNotesId(session.id);
+                              }}
+                              className="text-zinc-700 hover:text-zinc-500 transition-colors"
+                            >
+                              <Pencil size={9} />
+                            </button>
+                          )}
                         </div>
-                      )}
+                        {editingNotesId === session.id ? (
+                          <div className="space-y-2">
+                            <textarea
+                              value={notesDraft}
+                              onChange={(e) => setNotesDraft(e.target.value)}
+                              className="w-full bg-zinc-900 text-sm text-zinc-300 leading-relaxed rounded-lg p-3 outline-none resize-none min-h-[120px] border border-zinc-700 focus:border-orange-500/50"
+                              dir="rtl"
+                              autoFocus
+                            />
+                            <div className="flex gap-2 justify-end">
+                              <button
+                                onClick={() => setEditingNotesId(null)}
+                                className="text-zinc-600 hover:text-zinc-400 transition-colors"
+                              >
+                                <X size={14} />
+                              </button>
+                              <button
+                                onClick={() => handleSaveNotes(session.id)}
+                                className="text-orange-500 hover:text-orange-400 transition-colors"
+                              >
+                                <Check size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-zinc-400 leading-relaxed whitespace-pre-line">
+                            {session.notes || <span className="text-zinc-700 italic">אין הערות</span>}
+                          </p>
+                        )}
+                      </div>
 
                       {/* AI Summary */}
                       {session.aiSummary && (
