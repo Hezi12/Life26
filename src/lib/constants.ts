@@ -103,7 +103,7 @@ export const INITIAL_CATEGORIES: Category[] = [
   { id: "1", name: "שינה", color: "#8b5cf6", iconName: "Moon", keywords: ["שינה", "שנ״צ", "שנצ"] },
   { id: "2", name: "זמן משפחה", color: "#ec4899", iconName: "Heart", keywords: ["דניאל", "יונתן", "איתמר", "ילדים", "שרה", "ז״מ", "זמן משפחה"] },
   { id: "3", name: "כושר", color: "#84cc16", iconName: "Dumbbell", keywords: ["אימון", "משקולות", "ריצה", "הליכון"] },
-  { id: "4", name: "אירגון", color: "#a855f7", iconName: "List", keywords: ["השכמה", "אירגון", "מקלחת"] },
+  { id: "4", name: "ארגון", color: "#a855f7", iconName: "List", keywords: ["השכמה", "ארגון", "אירגון", "מקלחת", "עוגן"] },
   { id: "5", name: "ארוחה", color: "#f43f5e", iconName: "Utensils", keywords: ["ארוחה", "אוכל", "יוגורט"] },
   { id: "6", name: "קריאה", color: "#3b82f6", iconName: "Book", keywords: ["קריאה"] },
   { id: "7", name: "תכנון", color: "#10b981", iconName: "Compass", keywords: ["מיקוד", "תכנון"] },

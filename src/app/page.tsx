@@ -725,36 +725,25 @@ export default function HomePage() {
 
           {/* Desktop: Only Life Matrix */}
           <div className="hidden md:flex flex-1 items-center justify-center relative z-10 animate-in fade-in duration-700">
-            <div className="w-full max-w-5xl px-8">
-              <div className="border border-zinc-800/30 rounded-xl p-8 bg-zinc-900/5">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <Activity size={14} className="text-zinc-600" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Life Matrix</span>
-                  </div>
-                  <span className="text-[10px] text-zinc-700 font-mono tabular-nums">
-                    שבוע {weeksExpired.toLocaleString()} / 4,160
-                  </span>
-                </div>
-                <div className="grid grid-cols-[repeat(80,minmax(0,1fr))] grid-flow-row gap-[2px] overflow-hidden">
-                  {Array.from({ length: 4160 }).map((_, i) => {
-                    const isCurrent = i === weeksExpired;
-                    const isPast = i < weeksExpired;
-                    return (
-                      <div
-                        key={i}
-                        className={cn(
-                          "aspect-square rounded-[1px]",
-                          isCurrent
-                            ? "bg-orange-500 shadow-[0_0_6px_#f97316]"
-                            : isPast
-                              ? "bg-zinc-800"
-                              : "bg-white/[0.04]"
-                        )}
-                      />
-                    );
-                  })}
-                </div>
+            <div className="w-full max-w-6xl px-12">
+              <div className="grid grid-cols-[repeat(80,minmax(0,1fr))] grid-flow-row gap-[3px] overflow-hidden">
+                {Array.from({ length: 4160 }).map((_, i) => {
+                  const isCurrent = i === weeksExpired;
+                  const isPast = i < weeksExpired;
+                  return (
+                    <div
+                      key={i}
+                      className={cn(
+                        "aspect-square rounded-[1px]",
+                        isCurrent
+                          ? "bg-orange-500 shadow-[0_0_8px_#f97316]"
+                          : isPast
+                            ? "bg-zinc-800"
+                            : "bg-white/[0.04]"
+                      )}
+                    />
+                  );
+                })}
               </div>
             </div>
           </div>
