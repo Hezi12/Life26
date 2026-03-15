@@ -44,7 +44,15 @@ const Sidebar = () => {
         }
         
         const allEvents = await api.getEvents();
-        const todayEventsData = allEvents.filter(e => e.dateString === dateString);
+        const todayEventsRaw = allEvents.filter(e => e.dateString === dateString);
+        // Deduplicate by time+title
+        const seen = new Set<string>();
+        const todayEventsData = todayEventsRaw.filter(e => {
+          const key = `${e.time}|${e.title}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
         setTodayEvents(todayEventsData);
         
         const parserTextData = await api.getParserTexts(dateString);
@@ -67,11 +75,19 @@ const Sidebar = () => {
     
     try {
       const allEvents = await api.getEvents();
-      const todayEventsData = allEvents.filter(e => e.dateString === dateString);
-      
+      const todayEventsRaw = allEvents.filter(e => e.dateString === dateString);
+      // Deduplicate by time+title
+      const seenKeys = new Set<string>();
+      const todayEventsData = todayEventsRaw.filter(e => {
+        const key = `${e.time}|${e.title}`;
+        if (seenKeys.has(key)) return false;
+        seenKeys.add(key);
+        return true;
+      });
+
       const parserTextData = await api.getParserTexts(dateString);
       const todayTextData = parserTextData?.content || "";
-      
+
       setTodayEvents(todayEventsData);
       setTodayText(todayTextData);
       
@@ -84,15 +100,9 @@ const Sidebar = () => {
 
   const handleSave = async (newEvents: Event[], rawText: string) => {
     try {
-      // Get all existing events
-      const allEvents = await api.getEvents();
-      
-      // Filter out today's events and add new ones
-      const filteredEvents = allEvents.filter(e => e.dateString !== dateString);
-      const updatedEvents = [...filteredEvents, ...newEvents];
-      
-      // Save all events to API
-      for (const event of updatedEvents) {
+      // Delete old events for today first, then save new ones
+      await api.deleteEventsByDate(dateString);
+      for (const event of newEvents) {
         await api.saveEvent(event);
       }
       

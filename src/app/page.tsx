@@ -109,7 +109,15 @@ export default function HomePage() {
           api.getPomodoroSettings(),
         ]);
         
-        setEvents(eventsData);
+        // Deduplicate events by dateString+time+title
+        const seen1 = new Set<string>();
+        const dedupedEvents = eventsData.filter((e: Event) => {
+          const key = `${e.dateString}|${e.time}|${e.title}`;
+          if (seen1.has(key)) return false;
+          seen1.add(key);
+          return true;
+        });
+        setEvents(dedupedEvents);
         setCategories(categoriesData.length > 0 ? categoriesData : INITIAL_CATEGORIES);
         setWorkTopics(topicsData);
         setWorkSubjects(subjectsData);
@@ -224,7 +232,14 @@ export default function HomePage() {
         }
 
         const eventsData = await api.getEvents();
-        setEvents(eventsData);
+        const seen2 = new Set<string>();
+        const dedupedSync = eventsData.filter((e: Event) => {
+          const key = `${e.dateString}|${e.time}|${e.title}`;
+          if (seen2.has(key)) return false;
+          seen2.add(key);
+          return true;
+        });
+        setEvents(dedupedSync);
       } catch (error) {
         console.error('Sync failed', error);
       }

@@ -234,7 +234,25 @@ export default function SchedulePage() {
         ]);
         
         if (eventsData && Array.isArray(eventsData) && eventsData.length > 0) {
-          setEvents(eventsData);
+          // Deduplicate events by dateString+time+title to clean up any existing duplicates
+          const seen = new Set<string>();
+          const deduped = eventsData.filter((e: Event) => {
+            const key = `${e.dateString}|${e.time}|${e.title}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+          setEvents(deduped);
+
+          // Clean up duplicates from DB if found
+          if (deduped.length < eventsData.length) {
+            const duplicateIds = eventsData
+              .filter((e: Event) => !deduped.includes(e))
+              .map((e: Event) => e.id);
+            for (const id of duplicateIds) {
+              api.deleteEvent(id).catch(() => {});
+            }
+          }
         }
         
         if (categoriesData && Array.isArray(categoriesData) && categoriesData.length > 0) {
@@ -290,7 +308,15 @@ export default function SchedulePage() {
       try {
         const eventsData = await api.getEvents();
         if (eventsData && Array.isArray(eventsData)) {
-          setEvents(eventsData);
+          // Deduplicate on sync too
+          const seen = new Set<string>();
+          const deduped = eventsData.filter((e: Event) => {
+            const key = `${e.dateString}|${e.time}|${e.title}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+          setEvents(deduped);
         }
         const ds = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
         const parserTextData = await api.getParserTexts(ds);
@@ -827,13 +853,22 @@ export default function SchedulePage() {
       {isParserOpen && (
         <ParserModal dateString={dateString} categories={categories} existingEvents={dailyEvents} initialText={dailyParserTexts[dateString] || ""} 
           onClose={() => setIsParserOpen(false)} onSave={async (newEvents: Event[], inputText: string) => {
-            setEvents(prev => [...prev.filter(e => e.dateString !== dateString), ...newEvents]);
+            // Deduplicate parsed events by time+title before saving
+            const seenKeys = new Set<string>();
+            const dedupedEvents = newEvents.filter(e => {
+              const key = `${e.time}|${e.title}`;
+              if (seenKeys.has(key)) return false;
+              seenKeys.add(key);
+              return true;
+            });
+
+            setEvents(prev => [...prev.filter(e => e.dateString !== dateString), ...dedupedEvents]);
             setDailyParserTexts(prev => ({...prev, [dateString]: inputText}));
 
             // Delete old events for this date, then save new ones
             try {
               await api.deleteEventsByDate(dateString);
-              for (const event of newEvents) {
+              for (const event of dedupedEvents) {
                 await api.saveEvent(event);
               }
             } catch (error) {
