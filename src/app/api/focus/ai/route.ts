@@ -52,6 +52,8 @@ async function saveProfile(content: string): Promise<void> {
     }
 }
 
+export const maxDuration = 60;
+
 export async function POST(req: Request) {
     try {
         const { notes, history } = await req.json();
@@ -62,7 +64,7 @@ export async function POST(req: Request) {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const historyBlock = buildHistoryBlock(history || []);
         const sessionCount = (history || []).length + 1;
@@ -88,61 +90,37 @@ ${notes}
 
 === מה לכתוב ===
 
-חלק א — משוב (בעברית, בגוף שני):
+תחזיר JSON בלבד, בלי שום טקסט מסביב, בלי markdown, בלי backticks. רק JSON תקני:
 
-סיכום:
-[2-3 משפטים קצרים. מה עשית במיקוד הזה.]
-
-דפוסים:
-[${sessionCount <= 3 ? "אם אלה המיקודים הראשונים, כתוב שעדיין מוקדם לזהות דפוסים, או ציין משהו ראשוני שאתה שם לב אליו." : "דפוסים שאתה רואה לאורך המיקודים. הפנה למיקודים קודמים לפי מספר. אם אין דפוס ברור — אמור את זה."}]
-
-אתגר:
-[שאלה אחת קצרה או תובנה אחת. ללא הטפה.]
-
-אפירמציה:
-[משפט אחד בגוף ראשון שמתחיל ב"אני". מבוסס על מה שבאמת קרה במיקוד.]
-
-חלק ב — עדכון פרופיל:
-כתוב בדיוק את השורה:
----PROFILE_UPDATE---
-ואז כתוב פרופיל מעודכן. מסמך קצר (עד 10 שורות) בעברית שמכיל:
-- מה אתה יודע על המשתמש מתוך המיקודים (עובדות, לא הנחות)
-- דפוסים שזיהית
-- תחומי עניין שעלו
-- שינויים לאורך זמן
-
-הפרופיל הוא מסמך שלם — כתוב מחדש בכל פעם. שמור רק מה שרלוונטי.`;
+{
+  "summary": "2-3 משפטים קצרים. מה עשה במיקוד הזה.",
+  "patterns": "${sessionCount <= 3 ? "אם אלה המיקודים הראשונים, כתוב שעדיין מוקדם לזהות דפוסים, או ציין משהו ראשוני." : "דפוסים לאורך המיקודים. הפנה למיקודים קודמים לפי מספר. אם אין דפוס — אמור את זה."}",
+  "challenge": "שאלה אחת קצרה או תובנה אחת. ללא הטפה.",
+  "affirmation": "משפט אחד בגוף ראשון שמתחיל באני. מבוסס על מה שקרה במיקוד.",
+  "profile": "פרופיל מעודכן - מסמך קצר (עד 10 שורות) בעברית: עובדות על המשתמש, דפוסים, תחומי עניין, שינויים. כתוב מחדש בכל פעם."
+}`;
 
         const result = await model.generateContent(prompt);
         const fullText = result.response.text();
 
-        // Split feedback from profile update
-        const parts = fullText.split('---PROFILE_UPDATE---');
-        const feedbackText = parts[0].trim();
-        const profileUpdate = parts[1]?.trim();
+        // Parse JSON response (strip markdown code fences if present)
+        const jsonStr = fullText.replace(/```json?\s*/g, "").replace(/```\s*/g, "").trim();
+        const parsed = JSON.parse(jsonStr);
 
         // Save updated profile if present
-        if (profileUpdate) {
-            await saveProfile(profileUpdate);
+        if (parsed.profile) {
+            await saveProfile(parsed.profile);
         }
 
-        // Parse feedback sections
-        const summaryMatch = feedbackText.match(/סיכום:\s*([\s\S]*?)(?=דפוסים:|$)/);
-        const patternsMatch = feedbackText.match(/דפוסים:\s*([\s\S]*?)(?=אתגר:|$)/);
-        const challengeMatch = feedbackText.match(/אתגר:\s*([\s\S]*?)(?=אפירמציה:|$)/);
-        const affirmationMatch = feedbackText.match(/אפירמציה:\s*([\s\S]*?)(?=---PROFILE_UPDATE---|$)/);
-
         const summary = [
-            summaryMatch?.[1]?.trim(),
-            patternsMatch?.[1]?.trim() ? `דפוסים: ${patternsMatch[1].trim()}` : null,
-            challengeMatch?.[1]?.trim() ? `אתגר: ${challengeMatch[1].trim()}` : null,
+            parsed.summary,
+            parsed.patterns ? `דפוסים: ${parsed.patterns}` : null,
+            parsed.challenge ? `אתגר: ${parsed.challenge}` : null,
         ].filter(Boolean).join("\n\n");
 
-        const affirmation = affirmationMatch?.[1]?.trim() || "";
-
         return NextResponse.json({
-            summary: summary || feedbackText,
-            affirmation,
+            summary,
+            affirmation: parsed.affirmation || "",
         });
     } catch (error: any) {
         console.error("Focus AI Error:", error?.message || error);
