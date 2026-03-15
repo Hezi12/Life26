@@ -32,6 +32,9 @@ export default function FocusHistoryPage() {
   const [editEnd, setEditEnd] = useState("");
   const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
   const [notesDraft, setNotesDraft] = useState("");
+  const [editingNextId, setEditingNextId] = useState<string | null>(null);
+  const [editNextTime, setEditNextTime] = useState("");
+  const [editNextDate, setEditNextDate] = useState("");
 
   // Prompt editor state
   const [showPromptModal, setShowPromptModal] = useState(false);
@@ -75,6 +78,22 @@ export default function FocusHistoryPage() {
       setEditingTimeId(null);
     } catch (e) {
       console.error("Failed to update times", e);
+    }
+  };
+
+  const handleSaveNext = async (id: string) => {
+    try {
+      await api.updateFocusSession({
+        id,
+        nextFocusTime: editNextTime || undefined,
+        nextFocusDate: editNextDate || undefined,
+      });
+      setSessions((prev) =>
+        prev.map((s) => s.id === id ? { ...s, nextFocusTime: editNextTime, nextFocusDate: editNextDate } : s)
+      );
+      setEditingNextId(null);
+    } catch (e) {
+      console.error("Failed to update next focus", e);
     }
   };
 
@@ -452,15 +471,58 @@ export default function FocusHistoryPage() {
                       )}
 
                       {/* Next session plan */}
-                      {session.nextFocusTime && (
-                        <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-600">
-                          <span>מיקוד הבא:</span>
-                          <span className="text-zinc-400">{session.nextFocusTime}</span>
-                          {session.nextFocusDate && session.nextFocusDate !== session.dateString && (
-                            <span className="text-zinc-600">({session.nextFocusDate})</span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono text-zinc-600">מיקוד הבא:</span>
+                          {editingNextId === session.id ? (
+                            <>
+                              <input
+                                type="time"
+                                value={editNextTime}
+                                onChange={(e) => setEditNextTime(e.target.value)}
+                                className="text-[10px] font-mono text-orange-400 bg-orange-500/10 outline-none px-1.5 py-1 rounded w-[3.5rem]"
+                              />
+                              <input
+                                type="date"
+                                value={editNextDate}
+                                onChange={(e) => setEditNextDate(e.target.value)}
+                                className="text-[10px] font-mono text-orange-400 bg-orange-500/10 outline-none px-1.5 py-1 rounded"
+                              />
+                              <button
+                                onClick={() => handleSaveNext(session.id)}
+                                className="text-orange-500 hover:text-orange-400 transition-colors"
+                              >
+                                <Check size={12} />
+                              </button>
+                              <button
+                                onClick={() => setEditingNextId(null)}
+                                className="text-zinc-600 hover:text-zinc-400 transition-colors"
+                              >
+                                <X size={12} />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-[10px] font-mono text-zinc-400">
+                                {session.nextFocusTime || "לא נקבע"}
+                              </span>
+                              {session.nextFocusDate && session.nextFocusDate !== session.dateString && (
+                                <span className="text-[10px] font-mono text-zinc-600">({session.nextFocusDate})</span>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setEditNextTime(session.nextFocusTime || "");
+                                  setEditNextDate(session.nextFocusDate || session.dateString);
+                                  setEditingNextId(session.id);
+                                }}
+                                className="text-zinc-700 hover:text-zinc-500 transition-colors"
+                              >
+                                <Pencil size={9} />
+                              </button>
+                            </>
                           )}
                         </div>
-                      )}
+                      </div>
 
                       {/* Delete */}
                       <div className="flex justify-end pt-2 border-t border-zinc-800/50">
