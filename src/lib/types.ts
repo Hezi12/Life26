@@ -52,25 +52,6 @@ export interface PomodoroSettings {
   breakSound: string;
 }
 
-export interface Habit {
-  id: string;
-  name: string;
-  category: string;
-  frequency: 'daily' | 'weekly' | 'specific';
-  daysOfWeek?: number[]; // 0-6 (Sunday-Saturday)
-  startDate?: string; // YYYY-MM-DD
-  endDate?: string; // YYYY-MM-DD
-  iconName: string;
-  color: string;
-}
-
-export interface HabitLog {
-  id: string; // habitId-dateString
-  habitId: string;
-  dateString: string;
-  completed: boolean;
-}
-
 export interface DailyMission {
   id: string; // YYYY-MM-DD
   dateString: string;
@@ -101,5 +82,28 @@ export interface FocusSettings {
   schedule: { day: string; time: string }[];
   notificationPreMinutes: number;
   notifyOnTime: boolean;
+}
+
+export interface Law {
+  id: string;
+  position: number; // 1, 2, or 3
+  name: string;
+  description?: string;
+  startDate: string; // YYYY-MM-DD
+  endDate?: string; // YYYY-MM-DD
+  isActive: boolean;
+}
+
+export interface LawLog {
+  id: string; // lawId-dateString
+  lawId: string;
+  dateString: string;
+  kept: boolean;
+}
+
+export interface AiProfile {
+  id: string;
+  content: string;
+  updatedAt?: string;
 }
 

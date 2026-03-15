@@ -3,15 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  Target, 
-  Calendar, 
-  Repeat, 
-  Monitor, 
+import {
+  LayoutDashboard,
+  Target,
+  Calendar,
+  Monitor,
   Palette,
   Zap,
-  Plus 
+  Plus,
+  Shield
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ParserModal } from "./ParserModal";
@@ -140,7 +140,7 @@ const Sidebar = () => {
     { href: "/schedule", icon: Calendar, label: "Schedule" },
     { href: "/mission", icon: Zap, label: "Mission" },
     { href: "/computer", icon: Monitor, label: "Computer" },
-    { href: "/habits", icon: Repeat, label: "Habits" },
+    { href: "/laws", icon: Shield, label: "Laws" },
     { href: "/design-system", icon: Palette, label: "Design" },
   ];
 

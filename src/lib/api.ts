@@ -1,6 +1,7 @@
 // API helper functions
 
 import type {
+  AiProfile,
   Category,
   Event,
   WorkTopic,
@@ -8,11 +9,11 @@ import type {
   DailyNotes,
   StickyNotes,
   PomodoroSettings,
-  Habit,
-  HabitLog,
   DailyMission,
   FocusSession,
   FocusSettings,
+  Law,
+  LawLog,
 } from './types';
 
 interface ParserText {
@@ -185,44 +186,6 @@ export const api = {
     await fetch(`/api/photos?dateString=${dateString}`, { method: 'DELETE' });
   },
 
-  // Habits
-  async getHabits(): Promise<Habit[]> {
-    const res = await fetch('/api/habits');
-    if (!res.ok) throw new Error('Failed to fetch habits');
-    return res.json();
-  },
-
-  async saveHabit(habit: Habit): Promise<void> {
-    await fetch('/api/habits', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(habit),
-    });
-  },
-
-  async deleteHabit(id: string): Promise<void> {
-    await fetch(`/api/habits?id=${id}`, { method: 'DELETE' });
-  },
-
-  // Habit Logs
-  async getHabitLogs(habitId?: string, dateString?: string): Promise<HabitLog[]> {
-    const params = new URLSearchParams();
-    if (habitId) params.append('habitId', habitId);
-    if (dateString) params.append('dateString', dateString);
-    const url = `/api/habit-logs${params.toString() ? '?' + params.toString() : ''}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch habit logs');
-    return res.json();
-  },
-
-  async saveHabitLog(log: HabitLog): Promise<void> {
-    await fetch('/api/habit-logs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(log),
-    });
-  },
-
   // Missions
   async getMissions(dateString?: string): Promise<DailyMission[]> {
     const url = dateString ? `/api/missions?dateString=${dateString}` : '/api/missions';
@@ -297,5 +260,58 @@ export const api = {
     });
     if (!res.ok) throw new Error('Failed to get AI response');
     return res.json();
+  },
+
+  // AI Profile
+  async getAiProfile(): Promise<AiProfile> {
+    const res = await fetch('/api/ai-profile');
+    if (!res.ok) throw new Error('Failed to fetch AI profile');
+    return res.json();
+  },
+
+  // Laws
+  async getLaws(): Promise<Law[]> {
+    const res = await fetch('/api/laws');
+    if (!res.ok) throw new Error('Failed to fetch laws');
+    return res.json();
+  },
+
+  async saveLaw(law: Law): Promise<void> {
+    await fetch('/api/laws', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(law),
+    });
+  },
+
+  async deleteLaw(id: string): Promise<void> {
+    await fetch(`/api/laws?id=${id}`, { method: 'DELETE' });
+  },
+
+  // Law Logs
+  async getLawLogs(lawId?: string, dateString?: string): Promise<LawLog[]> {
+    const params = new URLSearchParams();
+    if (lawId) params.append('lawId', lawId);
+    if (dateString) params.append('dateString', dateString);
+    const url = `/api/law-logs${params.toString() ? '?' + params.toString() : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch law logs');
+    return res.json();
+  },
+
+  async saveLawLog(log: LawLog): Promise<void> {
+    await fetch('/api/law-logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(log),
+    });
+  },
+
+  async saveAiProfile(content: string): Promise<void> {
+    await fetch('/api/ai-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
   },
 };

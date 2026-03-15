@@ -1,5 +1,8 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { aiProfile } from "@/lib/schema";
+import { eq } from "drizzle-orm";
 
 interface HistorySession {
     sessionNumber: number;
@@ -14,8 +17,10 @@ interface HistorySession {
 function buildHistoryBlock(history: HistorySession[]): string {
     if (history.length === 0) return "אין היסטוריה קודמת — זהו המיקוד הראשון.";
 
+    // Send last 20 sessions for context (most recent are most relevant)
     return history
         .sort((a, b) => a.sessionNumber - b.sessionNumber)
+        .slice(-20)
         .map((s) => {
             let block = `[מיקוד ${s.sessionNumber} | ${s.dateString} ${s.startTime}–${s.endTime || "?"}]`;
             if (s.notes) block += `\nהערות: ${s.notes}`;
@@ -23,6 +28,28 @@ function buildHistoryBlock(history: HistorySession[]): string {
             return block;
         })
         .join("\n\n");
+}
+
+async function loadProfile(): Promise<string> {
+    try {
+        const rows = await db.select().from(aiProfile).where(eq(aiProfile.id, 'main'));
+        return rows[0]?.content || '';
+    } catch {
+        return '';
+    }
+}
+
+async function saveProfile(content: string): Promise<void> {
+    try {
+        await db.insert(aiProfile)
+            .values({ id: 'main', content, updatedAt: new Date().toISOString() })
+            .onConflictDoUpdate({
+                target: aiProfile.id,
+                set: { content, updatedAt: new Date().toISOString() }
+            });
+    } catch (error) {
+        console.error("Failed to save AI profile:", error);
+    }
 }
 
 export async function POST(req: Request) {
@@ -39,41 +66,71 @@ export async function POST(req: Request) {
 
         const historyBlock = buildHistoryBlock(history || []);
         const sessionCount = (history || []).length + 1;
+        const currentProfile = await loadProfile();
 
-        const prompt = `אתה שותף אסטרטגי בפרוטוקול מיקוד — מערכת אישית של צמיחה רציפה.
-תפקידך: לשמר הקשר היסטורי, למנוע סטיות מנתיב, ולשקף מצב אובייקטיבי שאינו מאפשר הונאה עצמית.
+        const prompt = `אתה משקף אישי במערכת מיקוד. אתה מדבר ישירות אל המשתמש בגוף שני (אתה/את).
 
-=== היסטוריית מיקודים קודמים (${sessionCount - 1} מיקודים) ===
+=== כללים חשובים ===
+- דבר בגוף שני — "עשית", "כתבת", "אתה", לא "הוא" או "האדם"
+- היה קצר וענייני. אל תנפח. אל תהיה דרמטי או פאתטי
+- אל תניח הנחות על מה שהמשתמש מרגיש או חושב — תגיב רק למה שכתוב
+- אל תחמיא סתם. אם אין מה לומר על דפוסים — אמור שעדיין מוקדם
+- כתוב עברית טבעית ופשוטה, בלי סגנון מליצי
+
+=== הפרופיל הפנימי שלך ===
+${currentProfile || "אין עדיין פרופיל — זהו המיקוד הראשון. התחל לבנות הבנה."}
+
+=== היסטוריה (${sessionCount - 1} מיקודים קודמים) ===
 ${historyBlock}
 
 === המיקוד הנוכחי (מיקוד ${sessionCount}) ===
 ${notes}
 
-=== המשימה שלך ===
-כתוב משוב בעברית בפורמט הבא בדיוק (שמור על הכותרות):
+=== מה לכתוב ===
+
+חלק א — משוב (בעברית, בגוף שני):
 
 סיכום:
-[2-3 משפטים. מה קרה במיקוד הזה. תמצת את הליבה.]
+[2-3 משפטים קצרים. מה עשית במיקוד הזה.]
 
 דפוסים:
-[${sessionCount <= 2 ? "אם זה אחד המיקודים הראשונים, ציין את זה וכתוב מה אתה מתחיל לראות." : "זהה דפוסים חוזרים, שינויים, התקדמות או נסיגה ביחס למיקודים קודמים. היה ספציפי — הפנה למיקודים קודמים לפי מספר."}]
+[${sessionCount <= 3 ? "אם אלה המיקודים הראשונים, כתוב שעדיין מוקדם לזהות דפוסים, או ציין משהו ראשוני שאתה שם לב אליו." : "דפוסים שאתה רואה לאורך המיקודים. הפנה למיקודים קודמים לפי מספר. אם אין דפוס ברור — אמור את זה."}]
 
 אתגר:
-[שאלה אחת חדה או תובנה אחת שמאתגרת את האדם. אל תחמיא — תשקף אמת. אם יש פער בין מה שהוא אומר למה שהוא עושה, ציין את זה.]
+[שאלה אחת קצרה או תובנה אחת. ללא הטפה.]
 
 אפירמציה:
-[משפט אחד בגוף ראשון שמתחיל ב"אני". מבוסס על מה שבאמת קרה, לא על מה שהאדם רוצה לשמוע.]
+[משפט אחד בגוף ראשון שמתחיל ב"אני". מבוסס על מה שבאמת קרה במיקוד.]
 
-חשוב: כתוב בתמציתיות. אל תכתוב יותר מ-6 שורות בסך הכל. עברית בלבד.`;
+חלק ב — עדכון פרופיל:
+כתוב בדיוק את השורה:
+---PROFILE_UPDATE---
+ואז כתוב פרופיל מעודכן. מסמך קצר (עד 10 שורות) בעברית שמכיל:
+- מה אתה יודע על המשתמש מתוך המיקודים (עובדות, לא הנחות)
+- דפוסים שזיהית
+- תחומי עניין שעלו
+- שינויים לאורך זמן
+
+הפרופיל הוא מסמך שלם — כתוב מחדש בכל פעם. שמור רק מה שרלוונטי.`;
 
         const result = await model.generateContent(prompt);
         const fullText = result.response.text();
 
-        // Parse sections
-        const summaryMatch = fullText.match(/סיכום:\s*([\s\S]*?)(?=דפוסים:|$)/);
-        const patternsMatch = fullText.match(/דפוסים:\s*([\s\S]*?)(?=אתגר:|$)/);
-        const challengeMatch = fullText.match(/אתגר:\s*([\s\S]*?)(?=אפירמציה:|$)/);
-        const affirmationMatch = fullText.match(/אפירמציה:\s*([\s\S]*?)$/);
+        // Split feedback from profile update
+        const parts = fullText.split('---PROFILE_UPDATE---');
+        const feedbackText = parts[0].trim();
+        const profileUpdate = parts[1]?.trim();
+
+        // Save updated profile if present
+        if (profileUpdate) {
+            await saveProfile(profileUpdate);
+        }
+
+        // Parse feedback sections
+        const summaryMatch = feedbackText.match(/סיכום:\s*([\s\S]*?)(?=דפוסים:|$)/);
+        const patternsMatch = feedbackText.match(/דפוסים:\s*([\s\S]*?)(?=אתגר:|$)/);
+        const challengeMatch = feedbackText.match(/אתגר:\s*([\s\S]*?)(?=אפירמציה:|$)/);
+        const affirmationMatch = feedbackText.match(/אפירמציה:\s*([\s\S]*?)(?=---PROFILE_UPDATE---|$)/);
 
         const summary = [
             summaryMatch?.[1]?.trim(),
@@ -84,7 +141,7 @@ ${notes}
         const affirmation = affirmationMatch?.[1]?.trim() || "";
 
         return NextResponse.json({
-            summary: summary || fullText,
+            summary: summary || feedbackText,
             affirmation,
         });
     } catch (error: any) {

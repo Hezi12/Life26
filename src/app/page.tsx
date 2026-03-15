@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { 
-  Play, 
-  Pause, 
-  RotateCcw, 
-  Settings, 
-  Plus, 
-  Edit2, 
-  Trash2, 
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  Settings,
+  Plus,
+  Edit2,
+  Trash2,
   ChevronRight,
   ChevronLeft,
   Monitor,
@@ -19,17 +19,24 @@ import {
   Check,
   Zap,
   Shield,
-  BarChart3
+  BarChart3,
+  Target,
+  Moon,
+  Smartphone,
+  Gamepad2,
 } from "lucide-react";
 import { cn, timeToMinutes, minutesToTime, calculateDuration } from "@/lib/utils";
-import { 
-  Category, 
-  Event, 
-  WorkTopic, 
-  WorkSubject, 
-  DailyNotes, 
-  StickyNotes, 
-  PomodoroSettings 
+import {
+  Category,
+  Event,
+  WorkTopic,
+  WorkSubject,
+  DailyNotes,
+  StickyNotes,
+  PomodoroSettings,
+  FocusSession,
+  Law,
+  LawLog,
 } from "@/lib/types";
 import { ICON_MAP, INITIAL_CATEGORIES } from "@/lib/constants";
 import { api } from '@/lib/api';
@@ -52,7 +59,10 @@ export default function HomePage() {
   });
   const [isLoaded, setIsLoaded] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  
+  const [nextFocusInfo, setNextFocusInfo] = useState<{ time?: string; date?: string } | null>(null);
+  const [laws, setLaws] = useState<Law[]>([]);
+  const [lawLogs, setLawLogs] = useState<Record<string, LawLog>>({});
+
   // Persistent tracker for Pomodoro sounds (defined in parent to survive unmounts)
   const lastActiveCycleRef = useRef<{type: 'work' | 'break', end: number} | null>(null);
 
@@ -105,6 +115,27 @@ export default function HomePage() {
 
         const stickyNotesData = await api.getStickyNotes();
         if (stickyNotesData) setStickyNotes(stickyNotesData);
+
+        // Load focus next session info
+        const focusSessions = await api.getFocusSessions();
+        const lastCompleted = focusSessions
+          .filter((s: FocusSession) => s.status === 'completed')
+          .sort((a: FocusSession, b: FocusSession) => b.sessionNumber - a.sessionNumber)[0];
+        if (lastCompleted?.nextFocusTime) {
+          setNextFocusInfo({ time: lastCompleted.nextFocusTime, date: lastCompleted.nextFocusDate });
+        }
+
+        // Load laws
+        const [lawsData, logsData] = await Promise.all([
+          api.getLaws(),
+          api.getLawLogs(),
+        ]);
+        if (lawsData) setLaws(lawsData);
+        if (logsData) {
+          const logsMap: Record<string, LawLog> = {};
+          logsData.forEach((log: LawLog) => (logsMap[log.id] = log));
+          setLawLogs(logsMap);
+        }
 
       } catch (e) {
         console.error("Failed to load dashboard data", e);
@@ -411,7 +442,33 @@ export default function HomePage() {
     }
   }, [stickyNotes]);
 
-  const [hoveredWeek, setHoveredWeek] = useState<number | null>(null);
+  const todayString = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }, []);
+
+  const activeLaws = useMemo(() => {
+    return laws.filter((l) => l.isActive).sort((a, b) => a.position - b.position);
+  }, [laws]);
+
+  const toggleLawLog = async (lawId: string, toKept: boolean) => {
+    const logId = `${lawId}-${todayString}`;
+    const newLogs = { ...lawLogs };
+    const existing = newLogs[logId];
+
+    if (existing && existing.kept === toKept) {
+      delete newLogs[logId];
+      setLawLogs(newLogs);
+      await api.saveLawLog({ id: logId, lawId, dateString: todayString, kept: false });
+    } else {
+      newLogs[logId] = { id: logId, lawId, dateString: todayString, kept: toKept };
+      setLawLogs(newLogs);
+      await api.saveLawLog(newLogs[logId]);
+    }
+  };
+
+  const LAW_ICONS = [Moon, Smartphone, Gamepad2];
+  const LAW_COLORS = ["#3b82f6", "#a855f7", "#ef4444"];
 
   const birthDate = useMemo(() => new Date(1993, 4, 12), []);
   const weeksExpired = useMemo(() => {
@@ -421,44 +478,97 @@ export default function HomePage() {
   return (
     <div className="h-screen overflow-hidden flex flex-col bg-black text-white font-mono selection:bg-orange-500/30 selection:text-white pt-safe" dir="rtl">
       {!activeSession ? (
-        <div className="flex-1 bg-black flex items-center justify-center p-4 sm:p-8 md:p-12 relative overflow-hidden">
+        <div className="flex-1 bg-black flex flex-col items-center p-4 sm:p-8 md:p-12 relative overflow-auto pb-32">
           {/* Background subtle grid for texture */}
           <div className="absolute inset-0 bg-[radial-gradient(#ffffff03_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
-          
+
           <div className="max-w-5xl w-full flex flex-col gap-6 sm:gap-8 md:gap-10 animate-in fade-in zoom-in-95 duration-1000">
-            {/* Life Matrix - Responsive grid for mobile */}
-            <div className="grid grid-cols-[repeat(40,minmax(0,1fr))] md:grid-cols-[repeat(80,minmax(0,1fr))] grid-rows-[repeat(104,minmax(0,1fr))] md:grid-rows-[repeat(52,minmax(0,1fr))] grid-flow-col gap-1 md:gap-1.5 p-4 md:p-4 bg-white/[0.01] border border-white/[0.02] rounded-2xl md:rounded-sm relative group overflow-auto max-h-[70vh] md:max-h-none">
+            {/* Life Matrix */}
+            <div className="grid grid-cols-[repeat(40,minmax(0,1fr))] md:grid-cols-[repeat(80,minmax(0,1fr))] grid-rows-[repeat(104,minmax(0,1fr))] md:grid-rows-[repeat(52,minmax(0,1fr))] grid-flow-col gap-1 md:gap-1.5 p-4 md:p-4 bg-white/[0.01] border border-white/[0.02] rounded-2xl md:rounded-sm relative group overflow-auto max-h-[60vh] md:max-h-none">
               {Array.from({ length: 4160 }).map((_, i) => {
                 const isCurrent = i === weeksExpired;
                 const isPast = i < weeksExpired;
-                
+
                 return (
-                  <div 
-                    key={i} 
-                    onMouseEnter={() => setHoveredWeek(i)}
-                    onMouseLeave={() => setHoveredWeek(null)}
+                  <div
+                    key={i}
                     className={cn(
-                      "w-1 h-1 md:w-1 md:h-1 rounded-full transition-all duration-300 cursor-crosshair hover:scale-[2.5] hover:bg-white hover:z-10",
-                      isCurrent 
-                        ? "bg-orange-500 animate-pulse scale-150 shadow-[0_0_10px_#f97316]" 
-                        : isPast 
-                          ? "bg-zinc-800" 
+                      "w-1 h-1 md:w-1 md:h-1 rounded-full transition-all duration-300",
+                      isCurrent
+                        ? "bg-orange-500 animate-pulse scale-150 shadow-[0_0_10px_#f97316]"
+                        : isPast
+                          ? "bg-zinc-800"
                           : "bg-white/[0.08]"
                     )}
                   />
                 );
               })}
             </div>
-            
-            <div className="flex justify-center border-t border-white/[0.03] pt-4 sm:pt-6 px-2">
-              {hoveredWeek !== null && (
-                <div className="flex items-center gap-2 animate-in fade-in duration-300">
-                  <div className="w-1 h-1 bg-orange-500 rounded-full animate-pulse" />
-                  <span className="text-[9px] sm:text-[10px] font-black text-orange-500 uppercase tracking-widest">
-                    {(hoveredWeek / 52).toFixed(1)} שנים
-                  </span>
+
+            {/* Widgets */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 relative z-10">
+              {/* Next Focus Widget */}
+              <div className="border border-zinc-800/50 rounded-xl p-4 bg-zinc-950/50">
+                <div className="flex items-center gap-2 mb-3">
+                  <Target size={14} className="text-orange-500" />
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Next Focus</span>
                 </div>
-              )}
+                {nextFocusInfo?.time ? (
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-white tabular-nums">{nextFocusInfo.time}</span>
+                    {nextFocusInfo.date && nextFocusInfo.date !== todayString && (
+                      <span className="text-xs font-mono text-zinc-600">{nextFocusInfo.date}</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-sm text-zinc-700 font-mono">Not set</span>
+                )}
+              </div>
+
+              {/* Laws Widget */}
+              <div className="border border-zinc-800/50 rounded-xl p-4 bg-zinc-950/50">
+                <div className="flex items-center gap-2 mb-3">
+                  <Shield size={14} className="text-orange-500" />
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">3 Laws</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  {activeLaws.map((law) => {
+                    const logId = `${law.id}-${todayString}`;
+                    const log = lawLogs[logId];
+                    const Icon = LAW_ICONS[law.position - 1] || Shield;
+                    const color = LAW_COLORS[law.position - 1] || "#f97316";
+
+                    return (
+                      <div key={law.id} className="flex items-center gap-1.5">
+                        <Icon size={12} style={{ color }} />
+                        <span className="text-xs font-mono text-zinc-500">{law.position}</span>
+                        <button
+                          onClick={() => toggleLawLog(law.id, true)}
+                          className={cn(
+                            "w-5 h-5 rounded flex items-center justify-center transition-colors",
+                            log?.kept === true
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : "text-zinc-700 hover:text-zinc-400"
+                          )}
+                        >
+                          <Check size={10} />
+                        </button>
+                        <button
+                          onClick={() => toggleLawLog(law.id, false)}
+                          className={cn(
+                            "w-5 h-5 rounded flex items-center justify-center transition-colors",
+                            log && log.kept === false
+                              ? "bg-red-500/20 text-red-400"
+                              : "text-zinc-700 hover:text-zinc-400"
+                          )}
+                        >
+                          <X size={10} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>

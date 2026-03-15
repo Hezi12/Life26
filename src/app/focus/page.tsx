@@ -1,27 +1,37 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { Play, Square, Lock, Clock, AlertTriangle } from "lucide-react";
-import { cn, getDateString, getNowTime, timeToMinutes, minutesDiff, formatElapsed } from "@/lib/utils";
+import Link from "next/link";
+import { Play, Lock, Pencil, History, Check } from "lucide-react";
+import { cn, getDateString, getNowTime, timeToMinutes } from "@/lib/utils";
 import { FocusSession } from "@/lib/types";
 import { api } from "@/lib/api";
 
 const PRESET_TIMES = ["09:30", "15:30", "20:00"];
 
-function getNextPresetTime(): { time: string; date: string } {
-  const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  const today = getDateString();
-
-  for (const t of PRESET_TIMES) {
-    if (timeToMinutes(t) > nowMin) {
-      return { time: t, date: today };
+function renderMarkdown(text: string) {
+  // Remove stray ** that don't wrap text
+  const cleaned = text.replace(/\*\*\s*$/gm, "").replace(/^\s*\*\*\s*$/gm, "").trim();
+  if (!cleaned) return null;
+  const parts = cleaned.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i} className="text-zinc-200 font-semibold">{part.slice(2, -2)}</strong>;
     }
-  }
-  // All presets passed today — pick first one tomorrow
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  return { time: PRESET_TIMES[0], date: getDateString(tomorrow) };
+    return <span key={i}>{part}</span>;
+  });
+}
+
+function getDefaultNextTime(): { time: string; date: string } {
+  const now = new Date();
+  const target = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+  const mins = target.getMinutes();
+  const rounded = mins < 15 ? 0 : mins < 45 ? 30 : 60;
+  target.setMinutes(rounded, 0, 0);
+
+  const h = String(target.getHours()).padStart(2, "0");
+  const m = String(target.getMinutes()).padStart(2, "0");
+  return { time: `${h}:${m}`, date: getDateString(target) };
 }
 
 export default function FocusPage() {
@@ -31,32 +41,37 @@ export default function FocusPage() {
 
   const [activeSession, setActiveSession] = useState<FocusSession | null>(null);
   const [editNotes, setEditNotes] = useState("");
-  const [confirmStart, setConfirmStart] = useState(false);
+  const [editingStart, setEditingStart] = useState(false);
 
   // Lock state
   const [lockTime, setLockTime] = useState("");
   const [lockDate, setLockDate] = useState(getDateString());
   const [showLock, setShowLock] = useState(false);
+  const [showCustom, setShowCustom] = useState(false);
 
-  // AI state (only after completing)
+  // AI state
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiResult, setAiResult] = useState<{ summary: string; affirmation: string } | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [justCompleted, setJustCompleted] = useState<FocusSession | null>(null);
 
   const notesRef = useRef<HTMLTextAreaElement>(null);
 
-  // Clock
+  // Prevent page scroll
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  // Clock — update every second only when needed (countdown/elapsed)
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  // Load (only completed sessions — active sessions live in local state only)
+  // Load completed sessions
   const loadSessions = useCallback(async () => {
     try {
       const data = await api.getFocusSessions();
-      const typed: FocusSession[] = data.map((s: any) => ({ ...s, notes: s.notes || "" }));
+      const typed: FocusSession[] = data.map((s: FocusSession) => ({ ...s, notes: s.notes || "" }));
       setSessions(typed.filter((s) => s.status === "completed"));
     } catch (e) {
       console.error("Failed to load focus sessions", e);
@@ -83,37 +98,17 @@ export default function FocusPage() {
     return { time: withNext[0].nextFocusTime!, date: withNext[0].nextFocusDate! };
   }, [sessions]);
 
-  const countdown = useMemo(() => {
-    if (!nextScheduled) return null;
-    const target = new Date(`${nextScheduled.date}T${nextScheduled.time}:00`);
-    const diff = target.getTime() - now.getTime();
-    if (diff <= 0) return { hours: 0, minutes: 0, seconds: 0, overdue: true };
-    return {
-      hours: Math.floor(diff / (1000 * 60 * 60)),
-      minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
-      seconds: Math.floor((diff % (1000 * 60)) / 1000),
-      overdue: false,
-    };
-  }, [nextScheduled, now]);
+  // Latest session's AI feedback (persisted in DB, won't disappear)
+  const latestFeedback = useMemo(() => {
+    const sorted = [...completedSessions].sort((a, b) => b.sessionNumber - a.sessionNumber);
+    const latest = sorted[0];
+    if (!latest?.aiSummary) return null;
+    return { summary: latest.aiSummary, affirmation: latest.aiAffirmation || "" };
+  }, [completedSessions]);
 
-  const elapsed = useMemo(() => {
-    if (!activeSession) return null;
-    return minutesDiff(activeSession.startTime, getNowTime());
-  }, [activeSession, now]);
 
   // Actions
-  const handlePlayClick = () => {
-    if (!confirmStart) {
-      setConfirmStart(true);
-      // Reset confirm after 3 seconds if not clicked again
-      setTimeout(() => setConfirmStart(false), 3000);
-      return;
-    }
-    startNewFocus();
-  };
-
   const startNewFocus = () => {
-    setConfirmStart(false);
     const newSession: FocusSession = {
       id: `focus-${Date.now()}`,
       sessionNumber: nextFocusNumber,
@@ -123,12 +118,9 @@ export default function FocusPage() {
       notes: "",
       status: "active",
     };
-    // Only local state — not saved to DB until completed
     setActiveSession(newSession);
     setEditNotes("");
-    setAiResult(null);
     setAiError(null);
-    setJustCompleted(null);
     setTimeout(() => notesRef.current?.focus(), 200);
   };
 
@@ -143,16 +135,18 @@ export default function FocusPage() {
       status: "completed",
     };
     try {
-      // First time saving to DB — only on completion
       await api.saveFocusSession(completed);
 
-      setJustCompleted(completed);
       setActiveSession(null);
       setShowLock(false);
       setLockTime("");
+      setAiLoading(true);
+      setAiError(null);
+
+      // Reload sessions so the new one appears
       await loadSessions();
 
-      // Request AI feedback — send full history for deep context
+      // Request AI feedback in background
       const aiInput = editNotes.trim() || `מיקוד ${completed.sessionNumber}, משך: ${completed.startTime} עד ${completed.endTime}`;
       const history = completedSessions.map((s) => ({
         sessionNumber: s.sessionNumber,
@@ -163,17 +157,18 @@ export default function FocusPage() {
         aiSummary: s.aiSummary,
         aiAffirmation: s.aiAffirmation,
       }));
-      setAiLoading(true);
-      setAiError(null);
+
       try {
         const result = await api.getFocusAI(aiInput, history);
         if (result && result.summary) {
-          setAiResult(result);
+          // Save AI result to DB
           await api.updateFocusSession({
             id: completed.id,
             aiSummary: result.summary,
             aiAffirmation: result.affirmation,
           });
+          // Reload so latestFeedback picks it up from DB
+          await loadSessions();
         } else {
           setAiError("תגובה ריקה מה-AI");
         }
@@ -184,7 +179,7 @@ export default function FocusPage() {
         setAiLoading(false);
       }
 
-      // Notification
+      // Notification for next focus
       if ("Notification" in window && Notification.permission === "granted") {
         const target = new Date(`${lockDate}T${lockTime}:00`);
         const delay = target.getTime() - Date.now();
@@ -221,138 +216,81 @@ export default function FocusPage() {
   // STATE: No active session
   // ========================
   if (!activeSession) {
+    // Show feedback: either loading, error, or the latest from DB
+    const showFeedback = aiLoading || aiError || latestFeedback;
+
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4" dir="rtl">
+      <div className="h-screen overflow-hidden bg-black flex flex-col items-center px-4" dir="rtl">
 
-        {/* AI feedback from just-completed session */}
-        {justCompleted && (aiLoading || aiResult || aiError) && (
-          <div className="w-full max-w-sm mb-10">
-            {aiLoading && (
-              <div className="text-center">
-                <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-ping mx-auto mb-2" />
-                <p className="text-xs font-mono text-zinc-600">מעבד...</p>
-              </div>
-            )}
-            {aiError && !aiLoading && (
-              <div className="text-center">
-                <p className="text-xs font-mono text-red-400">{aiError}</p>
-              </div>
-            )}
-            {aiResult && (
-              <div className="space-y-4">
-                {aiResult.summary.split("\n\n").map((block, i) => (
-                  <p key={i} className="text-sm text-zinc-400 leading-relaxed text-right whitespace-pre-line">{block}</p>
-                ))}
-                {aiResult.affirmation && (
-                  <p className="text-sm text-orange-400 font-medium text-center mt-2">{aiResult.affirmation}</p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Countdown or big play button */}
-        {nextScheduled && countdown ? (
-          <div className="text-center">
-            {/* Countdown */}
-            <div className="mb-8">
-              {countdown.overdue ? (
-                <div className="flex items-center gap-2 justify-center mb-2">
-                  <AlertTriangle size={14} className="text-red-400 animate-pulse" />
-                  <span className="text-xs font-mono text-red-400 tracking-wider">OVERDUE</span>
+        {/* Top section — AI feedback, scrollable if long */}
+        <div className="flex-1 flex flex-col justify-end items-center w-full max-w-md overflow-hidden pb-8">
+          {showFeedback && (
+            <div className="w-full overflow-y-auto max-h-full">
+              {aiLoading && (
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1 mb-3">
+                    <div className="w-1 h-1 bg-orange-500 rounded-full animate-pulse" />
+                    <div className="w-1 h-1 bg-orange-500 rounded-full animate-pulse" style={{ animationDelay: "0.3s" }} />
+                    <div className="w-1 h-1 bg-orange-500 rounded-full animate-pulse" style={{ animationDelay: "0.6s" }} />
+                  </div>
+                  <p className="text-xs font-mono text-zinc-600">השותף האסטרטגי מעבד...</p>
                 </div>
-              ) : (
-                <span className="text-xs font-mono text-zinc-600 tracking-wider">NEXT_FOCUS</span>
               )}
-              <div className={cn(
-                "text-4xl font-black tabular-nums tracking-tight mt-2",
-                countdown.overdue ? "text-red-400" : "text-zinc-500"
-              )}>
-                {countdown.overdue
-                  ? nextScheduled.time
-                  : `${String(countdown.hours).padStart(2, "0")}:${String(countdown.minutes).padStart(2, "0")}:${String(countdown.seconds).padStart(2, "0")}`}
-              </div>
+              {aiError && !aiLoading && (
+                <div className="text-center">
+                  <p className="text-xs font-mono text-red-400">{aiError}</p>
+                </div>
+              )}
+              {!aiLoading && !aiError && latestFeedback && (
+                <div className="space-y-3">
+                  {latestFeedback.summary.split("\n\n").map((block, i) => (
+                    <p key={i} className="text-[11px] md:text-[13px] text-zinc-500 leading-relaxed text-right whitespace-pre-line">{renderMarkdown(block)}</p>
+                  ))}
+                  {latestFeedback.affirmation && (
+                    <div className="border-r-2 border-orange-500/40 pr-3 mt-4">
+                      <p className="text-[11px] md:text-[13px] text-orange-400/80 leading-relaxed text-right">{renderMarkdown(latestFeedback.affirmation)}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
+          )}
+        </div>
 
-            {/* Play circle */}
-            <button
-              onClick={handlePlayClick}
-              className={cn(
-                "w-36 h-36 rounded-full flex items-center justify-center transition-all duration-500 active:scale-90",
-                confirmStart
-                  ? "bg-orange-500 border-2 border-orange-400 shadow-[0_0_60px_rgba(249,115,22,0.5)] scale-105"
-                  : countdown.overdue
-                    ? "bg-red-500/10 border-2 border-red-500 shadow-[0_0_40px_rgba(239,68,68,0.3)] hover:shadow-[0_0_60px_rgba(239,68,68,0.5)]"
-                    : "bg-orange-500/10 border-2 border-orange-500 shadow-[0_0_40px_rgba(249,115,22,0.2)] hover:shadow-[0_0_60px_rgba(249,115,22,0.4)]"
-              )}
-            >
-              <Play
-                size={48}
-                strokeWidth={2}
-                className={cn(
-                  "mr-[-4px] transition-colors duration-300",
-                  confirmStart ? "text-black" : countdown.overdue ? "text-red-400" : "text-orange-500"
+        {/* Center — Play button + focus info */}
+        <div className="flex flex-col items-center py-4">
+          <div className="text-center mb-6">
+            {nextScheduled ? (
+              <>
+                <span className="text-xs font-mono text-zinc-600 tracking-wider">מיקוד {nextFocusNumber}</span>
+                <div className="text-4xl font-black tabular-nums tracking-tight mt-2 text-zinc-400">
+                  {nextScheduled.time}
+                </div>
+                {nextScheduled.date !== getDateString() && (
+                  <span className="text-xs font-mono text-zinc-600 mt-1 block">מחר</span>
                 )}
-              />
-            </button>
-
-            <div className="mt-6 text-xs font-mono transition-colors duration-300">
-              {confirmStart ? (
-                <span className="text-orange-400">לחץ שוב להתחלה</span>
-              ) : (
-                <span className="text-zinc-700">מיקוד {nextFocusNumber}</span>
-              )}
-            </div>
+              </>
+            ) : (
+              <span className="text-sm font-mono text-zinc-600">מיקוד {nextFocusNumber}</span>
+            )}
           </div>
-        ) : (
-          <div className="text-center">
-            {/* First time / no scheduled — just big play */}
-            <button
-              onClick={handlePlayClick}
-              className={cn(
-                "w-36 h-36 rounded-full flex items-center justify-center transition-all duration-500 active:scale-90",
-                confirmStart
-                  ? "bg-orange-500 border-2 border-orange-400 shadow-[0_0_60px_rgba(249,115,22,0.5)] scale-105"
-                  : "bg-orange-500/10 border-2 border-orange-500 shadow-[0_0_40px_rgba(249,115,22,0.2)] hover:shadow-[0_0_60px_rgba(249,115,22,0.4)]"
-              )}
-            >
-              <Play size={48} strokeWidth={2} className={cn(
-                "mr-[-4px] transition-colors duration-300",
-                confirmStart ? "text-black" : "text-orange-500"
-              )} />
-            </button>
 
-            <div className="mt-6 text-xs font-mono transition-colors duration-300">
-              {confirmStart ? (
-                <span className="text-orange-400">לחץ שוב להתחלה</span>
-              ) : (
-                <span className="text-zinc-700">מיקוד {nextFocusNumber}</span>
-              )}
-            </div>
-          </div>
-        )}
+          <button
+            onClick={startNewFocus}
+            className="w-36 h-36 rounded-full flex items-center justify-center transition-all duration-500 active:scale-90 bg-orange-500/10 border-2 border-orange-500 shadow-[0_0_40px_rgba(249,115,22,0.2)] hover:shadow-[0_0_60px_rgba(249,115,22,0.4)]"
+          >
+            <Play size={48} strokeWidth={2} className="mr-[-4px] text-orange-500" />
+          </button>
+        </div>
 
-        {/* Chain dots */}
+        {/* Bottom section — spacer to balance layout */}
+        <div className="flex-1" />
+
+        {/* History link */}
         {completedSessions.length > 0 && (
-          <div className="mt-12 flex flex-wrap gap-1.5 justify-center max-w-xs">
-            {[...completedSessions]
-              .sort((a, b) => a.sessionNumber - b.sessionNumber)
-              .slice(-30)
-              .map((s) => (
-                <div
-                  key={s.id}
-                  title={`מיקוד ${s.sessionNumber}`}
-                  className="w-2.5 h-2.5 rounded-full bg-orange-500/60 hover:bg-orange-400 transition-all hover:scale-150"
-                />
-              ))}
-          </div>
-        )}
-
-        {/* Total */}
-        {completedSessions.length > 0 && (
-          <div className="mt-4 text-xs font-mono text-zinc-700">
-            {completedSessions.length} מיקודים
-          </div>
+          <Link href="/focus/history" className="fixed bottom-24 md:bottom-6 left-4 md:left-6 text-zinc-700 hover:text-zinc-500 transition-colors">
+            <History size={18} />
+          </Link>
         )}
       </div>
     );
@@ -361,20 +299,162 @@ export default function FocusPage() {
   // ========================
   // STATE: Active session
   // ========================
+  const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+  const lockDefaultPreset = PRESET_TIMES.find((t) => timeToMinutes(t) > nowMin) || PRESET_TIMES[0];
+
   return (
-    <div className="min-h-screen bg-black px-4 py-6 md:px-8 md:py-10" dir="rtl">
+    <div className="h-screen overflow-hidden bg-black px-4 py-6 md:px-8 md:py-10" dir="rtl">
       {/* Top bar */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <span className="text-xs font-mono text-zinc-600 tracking-wider">מיקוד {activeSession.sessionNumber}</span>
-          <div className="text-2xl font-black text-white tabular-nums mt-1">
-            {elapsed !== null ? formatElapsed(elapsed) : "00:00"}
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+            <span className="text-sm font-black text-white tracking-tight">מיקוד {activeSession.sessionNumber}</span>
+          </div>
+          <div className="flex items-center gap-1.5 mt-1 mr-4">
+            {editingStart ? (
+              <>
+                <input
+                  type="time"
+                  value={activeSession.startTime}
+                  onChange={(e) => setActiveSession({ ...activeSession, startTime: e.target.value })}
+                  className="text-[10px] font-mono text-orange-400 bg-orange-500/10 outline-none w-[3.5rem] px-1 py-0.5 rounded"
+                  autoFocus
+                />
+                <span className="text-[10px] font-mono text-zinc-700">·</span>
+                <input
+                  type="date"
+                  value={activeSession.dateString}
+                  onChange={(e) => setActiveSession({ ...activeSession, dateString: e.target.value })}
+                  className="text-[10px] font-mono text-orange-400 bg-orange-500/10 outline-none px-1 py-0.5 rounded"
+                />
+                <button
+                  onClick={() => setEditingStart(false)}
+                  className="text-orange-500 hover:text-orange-400 transition-colors mr-1"
+                >
+                  <Check size={10} />
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="text-[10px] font-mono text-zinc-600">
+                  {activeSession.startTime} · {activeSession.dateString}
+                </span>
+                <button
+                  onClick={() => setEditingStart(true)}
+                  className="text-zinc-700 hover:text-zinc-500 transition-colors"
+                >
+                  <Pencil size={9} />
+                </button>
+              </>
+            )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-          <span className="text-xs font-mono text-zinc-600">{activeSession.startTime}</span>
-        </div>
+
+        {/* Lock controls */}
+        {!showLock ? (
+          <button
+            onClick={() => {
+              setLockTime(lockDefaultPreset);
+              if (timeToMinutes(lockDefaultPreset) <= nowMin) {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                setLockDate(getDateString(tomorrow));
+              } else {
+                setLockDate(getDateString());
+              }
+              setShowCustom(false);
+              setShowLock(true);
+            }}
+            className="w-8 h-8 rounded-full border border-zinc-800 flex items-center justify-center text-zinc-600 hover:border-zinc-600 hover:text-zinc-400 transition-all duration-300"
+          >
+            <Lock size={14} />
+          </button>
+        ) : (
+          <div className="flex items-center gap-3">
+            {/* Default preset */}
+            <button
+              onClick={() => {
+                setLockTime(lockDefaultPreset);
+                const nm = new Date().getHours() * 60 + new Date().getMinutes();
+                if (timeToMinutes(lockDefaultPreset) <= nm) {
+                  const tomorrow = new Date();
+                  tomorrow.setDate(tomorrow.getDate() + 1);
+                  setLockDate(getDateString(tomorrow));
+                } else {
+                  setLockDate(getDateString());
+                }
+                setShowCustom(false);
+              }}
+              className={cn(
+                "font-mono text-sm px-2 py-1 rounded-lg transition-all duration-200",
+                lockTime === lockDefaultPreset && !showCustom
+                  ? "text-orange-400 bg-orange-500/10"
+                  : "text-zinc-600 hover:text-zinc-400"
+              )}
+            >
+              {lockDefaultPreset}
+            </button>
+
+            {/* +3h option — show as input when editing, button otherwise */}
+            {showCustom ? (
+              <input
+                type="time"
+                value={lockTime}
+                onChange={(e) => {
+                  setLockTime(e.target.value);
+                  const nm = new Date().getHours() * 60 + new Date().getMinutes();
+                  if (timeToMinutes(e.target.value) <= nm) {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    setLockDate(getDateString(tomorrow));
+                  } else {
+                    setLockDate(getDateString());
+                  }
+                }}
+                autoFocus
+                className="text-sm font-mono tabular-nums text-orange-400 text-center outline-none w-28 bg-orange-500/10 px-2 py-1 rounded-lg [&::-webkit-calendar-picker-indicator]:invert"
+              />
+            ) : (
+              <button
+                onClick={() => {
+                  const def = getDefaultNextTime();
+                  setLockTime(def.time);
+                  setLockDate(def.date);
+                }}
+                className={cn(
+                  "font-mono text-sm px-2 py-1 rounded-lg transition-all duration-200",
+                  lockTime === getDefaultNextTime().time
+                    ? "text-orange-400 bg-orange-500/10"
+                    : "text-zinc-600 hover:text-zinc-400"
+                )}
+              >
+                {getDefaultNextTime().time}
+              </button>
+            )}
+
+            {/* Pencil toggle */}
+            <button
+              onClick={() => setShowCustom(!showCustom)}
+              className="text-zinc-700 hover:text-zinc-400 transition-colors"
+            >
+              <Pencil size={12} />
+            </button>
+
+            {lockDate !== getDateString() && (
+              <span className="text-[10px] font-mono text-zinc-600">מחר</span>
+            )}
+
+            {/* Lock confirm */}
+            <button
+              onClick={lockAndComplete}
+              disabled={!lockTime}
+              className="w-8 h-8 rounded-full border border-orange-500/30 flex items-center justify-center text-orange-500 hover:bg-orange-500/10 active:scale-90 transition-all duration-300"
+            >
+              <Lock size={14} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Notes */}
@@ -387,92 +467,6 @@ export default function FocusPage() {
         dir="rtl"
       />
 
-      {/* Bottom: Lock icon & panel */}
-      {!showLock ? (
-        <div className="flex justify-center mt-8">
-          <button
-            onClick={() => {
-              const preset = getNextPresetTime();
-              setLockTime(preset.time);
-              setLockDate(preset.date);
-              setShowLock(true);
-            }}
-            className="w-12 h-12 rounded-full border border-zinc-800 flex items-center justify-center text-zinc-700 hover:border-orange-500/30 hover:text-orange-500 transition-all duration-300"
-          >
-            <Lock size={18} />
-          </button>
-        </div>
-      ) : (
-        <div className="mt-6 space-y-4">
-          {/* Preset time buttons */}
-          <div className="flex gap-2 justify-center">
-            {PRESET_TIMES.map((t) => (
-              <button
-                key={t}
-                onClick={() => {
-                  setLockTime(t);
-                  // If picking a time that already passed today, set to tomorrow
-                  const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
-                  if (timeToMinutes(t) <= nowMin) {
-                    const tomorrow = new Date();
-                    tomorrow.setDate(tomorrow.getDate() + 1);
-                    setLockDate(getDateString(tomorrow));
-                  } else {
-                    setLockDate(getDateString());
-                  }
-                }}
-                className={cn(
-                  "px-5 py-2.5 rounded-full font-mono text-sm transition-all duration-300",
-                  lockTime === t
-                    ? "bg-orange-500 text-black font-bold"
-                    : "bg-zinc-900 text-zinc-500 border border-zinc-800 hover:border-zinc-600"
-                )}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-
-          {/* Custom time (small, secondary) */}
-          <div className="flex gap-2 justify-center items-center">
-            <input
-              type="time"
-              value={PRESET_TIMES.includes(lockTime) ? "" : lockTime}
-              onChange={(e) => {
-                setLockTime(e.target.value);
-                const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
-                if (timeToMinutes(e.target.value) <= nowMin) {
-                  const tomorrow = new Date();
-                  tomorrow.setDate(tomorrow.getDate() + 1);
-                  setLockDate(getDateString(tomorrow));
-                } else {
-                  setLockDate(getDateString());
-                }
-              }}
-              className="bg-transparent border-b border-zinc-800 text-zinc-600 text-xs font-mono px-2 py-1 outline-none focus:border-orange-500/40 focus:text-zinc-400 w-20 text-center"
-              placeholder="אחר"
-            />
-            {lockDate !== getDateString() && (
-              <span className="text-xs font-mono text-zinc-600">מחר</span>
-            )}
-          </div>
-
-          {/* Lock button */}
-          <button
-            onClick={lockAndComplete}
-            disabled={!lockTime}
-            className={cn(
-              "w-full py-3 rounded-full font-mono text-sm transition-all duration-300",
-              lockTime
-                ? "bg-orange-500/10 border border-orange-500/30 text-orange-400 hover:bg-orange-500/20"
-                : "bg-zinc-900 border border-zinc-800 text-zinc-700 cursor-not-allowed"
-            )}
-          >
-            <Lock size={14} className="inline ml-2" />
-            נעילה — {lockTime || "—"}
-          </button>
-        </div>
-      )}
     </div>
   );
 }

@@ -60,27 +60,6 @@ export const pomodoroSettings = pgTable('pomodoro_settings', {
   breakSound: text('break_sound').default('chime'),
 });
 
-// Habits table
-export const habits = pgTable('habits', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  category: text('category').notNull(),
-  frequency: text('frequency').notNull(), // 'daily' | 'weekly' | 'specific'
-  daysOfWeek: jsonb('days_of_week').$type<number[]>(),
-  startDate: text('start_date'),
-  endDate: text('end_date'),
-  iconName: text('icon_name').notNull(),
-  color: text('color').notNull(),
-});
-
-// Habit Logs table
-export const habitLogs = pgTable('habit_logs', {
-  id: text('id').primaryKey(),
-  habitId: text('habit_id').notNull(),
-  dateString: text('date_string').notNull(),
-  completed: boolean('completed').default(false),
-});
-
 // Daily Missions table
 export const dailyMissions = pgTable('daily_missions', {
   id: text('id').primaryKey(),
@@ -134,4 +113,30 @@ export const focusSettings = pgTable('focus_settings', {
   schedule: jsonb('schedule').$type<{ day: string; time: string }[]>(),
   notificationPreMinutes: integer('notification_pre_minutes').default(15),
   notifyOnTime: boolean('notify_on_time').default(true),
+});
+
+// Laws table (3 Laws system)
+export const laws = pgTable('laws', {
+  id: text('id').primaryKey(),
+  position: integer('position').notNull(), // 1, 2, or 3
+  name: text('name').notNull(),
+  description: text('description').default(''),
+  startDate: text('start_date').notNull(), // YYYY-MM-DD when this law was set
+  endDate: text('end_date'), // YYYY-MM-DD
+  isActive: boolean('is_active').default(true),
+});
+
+// Law Logs table
+export const lawLogs = pgTable('law_logs', {
+  id: text('id').primaryKey(), // lawId-dateString
+  lawId: text('law_id').notNull(),
+  dateString: text('date_string').notNull(),
+  kept: boolean('kept').default(false),
+});
+
+// AI Profile — internal document the AI maintains about the user across focus sessions
+export const aiProfile = pgTable('ai_profile', {
+  id: text('id').primaryKey().default('main'),
+  content: text('content').default(''), // the AI's evolving understanding of the user
+  updatedAt: text('updated_at'), // ISO timestamp of last update
 });
