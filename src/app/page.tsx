@@ -138,6 +138,18 @@ export default function HomePage() {
           .sort((a: FocusSession, b: FocusSession) => b.sessionNumber - a.sessionNumber)[0];
         if (lastCompleted?.nextFocusTime) {
           setNextFocusInfo({ time: lastCompleted.nextFocusTime, date: lastCompleted.nextFocusDate, total: completedFocus.length });
+          // Schedule notification 5 min before next focus via Service Worker
+          if ("Notification" in window && Notification.permission === "granted" && navigator.serviceWorker?.controller) {
+            const target = new Date(`${lastCompleted.nextFocusDate}T${lastCompleted.nextFocusTime}:00`);
+            if (target.getTime() > Date.now()) {
+              navigator.serviceWorker.controller.postMessage({
+                type: "SCHEDULE_FOCUS_NOTIFICATION",
+                time: lastCompleted.nextFocusTime,
+                date: lastCompleted.nextFocusDate,
+                sessionNumber: lastCompleted.sessionNumber + 1,
+              });
+            }
+          }
         } else {
           setNextFocusInfo({ total: completedFocus.length });
         }
@@ -516,25 +528,8 @@ export default function HomePage() {
           {/* Background */}
           <div className="fixed inset-0 bg-[radial-gradient(#ffffff03_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
 
-          <div className="max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-4 sm:gap-5 animate-in fade-in duration-700 relative z-10">
-
-            {/* Top Row: Clock + Date */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-lg font-black italic tracking-tighter text-white">LIFE26</h1>
-                <div className="text-[10px] text-zinc-600 font-mono">
-                  {isLoaded ? new Intl.DateTimeFormat('he-IL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(currentTime) : "..."}
-                </div>
-              </div>
-              <div className="text-left">
-                <div className="text-3xl font-black tabular-nums text-white tracking-tight leading-none">
-                  {String(currentTime.getHours()).padStart(2, '0')}:{String(currentTime.getMinutes()).padStart(2, '0')}
-                </div>
-                <div className="text-xs text-zinc-700 tabular-nums font-mono text-left">
-                  :{String(currentTime.getSeconds()).padStart(2, '0')}
-                </div>
-              </div>
-            </div>
+          {/* Mobile Dashboard (no Life Matrix, no top row) */}
+          <div className="md:hidden max-w-4xl w-full mx-auto px-4 py-6 flex flex-col gap-4 animate-in fade-in duration-700 relative z-10">
 
             {/* Quick Stats Row */}
             <div className="grid grid-cols-4 gap-2">
@@ -576,7 +571,7 @@ export default function HomePage() {
             </div>
 
             {/* Next Focus + Laws Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {/* Next Focus */}
               <div className="border border-zinc-800/50 rounded-xl p-4 bg-zinc-900/10">
                 <div className="flex items-center gap-2 mb-3">
@@ -692,7 +687,7 @@ export default function HomePage() {
             )}
 
             {/* Notes Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {/* Daily Notes */}
               <div className="border border-zinc-800/50 rounded-xl p-4 bg-zinc-900/10">
                 <div className="flex items-center gap-2 mb-3">
@@ -726,39 +721,44 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Life Matrix - Compact */}
-            <div className="border border-zinc-800/30 rounded-xl p-4 bg-zinc-900/5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Activity size={12} className="text-zinc-600" />
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600">Life Matrix</span>
+          </div>
+
+          {/* Desktop: Only Life Matrix */}
+          <div className="hidden md:flex flex-1 items-center justify-center relative z-10 animate-in fade-in duration-700">
+            <div className="w-full max-w-5xl px-8">
+              <div className="border border-zinc-800/30 rounded-xl p-8 bg-zinc-900/5">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <Activity size={14} className="text-zinc-600" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Life Matrix</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-700 font-mono tabular-nums">
+                    שבוע {weeksExpired.toLocaleString()} / 4,160
+                  </span>
                 </div>
-                <span className="text-[9px] text-zinc-700 font-mono tabular-nums">
-                  שבוע {weeksExpired.toLocaleString()} / 4,160
-                </span>
-              </div>
-              <div className="grid grid-cols-[repeat(52,minmax(0,1fr))] md:grid-cols-[repeat(80,minmax(0,1fr))] grid-flow-row gap-[2px] overflow-hidden max-h-[120px] md:max-h-[160px]">
-                {Array.from({ length: 4160 }).map((_, i) => {
-                  const isCurrent = i === weeksExpired;
-                  const isPast = i < weeksExpired;
-                  return (
-                    <div
-                      key={i}
-                      className={cn(
-                        "aspect-square rounded-[1px]",
-                        isCurrent
-                          ? "bg-orange-500 shadow-[0_0_6px_#f97316]"
-                          : isPast
-                            ? "bg-zinc-800"
-                            : "bg-white/[0.04]"
-                      )}
-                    />
-                  );
-                })}
+                <div className="grid grid-cols-[repeat(80,minmax(0,1fr))] grid-flow-row gap-[2px] overflow-hidden">
+                  {Array.from({ length: 4160 }).map((_, i) => {
+                    const isCurrent = i === weeksExpired;
+                    const isPast = i < weeksExpired;
+                    return (
+                      <div
+                        key={i}
+                        className={cn(
+                          "aspect-square rounded-[1px]",
+                          isCurrent
+                            ? "bg-orange-500 shadow-[0_0_6px_#f97316]"
+                            : isPast
+                              ? "bg-zinc-800"
+                              : "bg-white/[0.04]"
+                        )}
+                      />
+                    );
+                  })}
+                </div>
               </div>
             </div>
-
           </div>
+
         </div>
       ) : (
         <>

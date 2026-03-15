@@ -14,12 +14,12 @@ export default function ServiceWorkerRegistration() {
           console.log('Service Worker registration failed:', error);
         });
     }
+
+    // Request notification permission on first visit
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
   }, []);
 
   return null;
 }
-
-
-
-
-

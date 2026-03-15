@@ -179,29 +179,19 @@ export default function FocusPage() {
         setAiLoading(false);
       }
 
-      // Notification for next focus
-      if ("Notification" in window && Notification.permission === "granted") {
-        const target = new Date(`${lockDate}T${lockTime}:00`);
-        const delay = target.getTime() - Date.now();
-        if (delay > 0) {
-          setTimeout(() => {
-            new Notification("FOCUS_PROTOCOL", {
-              body: `מיקוד ${nextFocusNumber + 1} — הגיע הזמן להתייצב.`,
-              icon: "/favicon.png",
-            });
-          }, delay);
-        }
+      // Schedule notification 5 min before next focus via Service Worker
+      if ("Notification" in window && Notification.permission === "granted" && navigator.serviceWorker?.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: "SCHEDULE_FOCUS_NOTIFICATION",
+          time: lockTime,
+          date: lockDate,
+          sessionNumber: nextFocusNumber + 1,
+        });
       }
     } catch (e) {
       console.error("Failed to complete session", e);
     }
   };
-
-  useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  }, []);
 
   // --- Render ---
   if (!isLoaded) {
