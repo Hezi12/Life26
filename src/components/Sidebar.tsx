@@ -14,6 +14,7 @@ import {
   Shield,
   BarChart3,
   Download,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ParserModal } from "./ParserModal";
@@ -143,6 +144,7 @@ const Sidebar = () => {
     { href: "/mission", icon: Zap, label: "Mission" },
     { href: "/computer", icon: Monitor, label: "Computer" },
     { href: "/laws", icon: Shield, label: "Laws" },
+    { href: "/diametrix", icon: TrendingUp, label: "Diametrix" },
     { href: "/analytics", icon: BarChart3, label: "Analytics" },
   ];
 

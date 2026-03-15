@@ -134,6 +134,34 @@ export const lawLogs = pgTable('law_logs', {
   kept: boolean('kept').default(false),
 });
 
+// DIAMETRIX — Trading protocol meetings (decision journal)
+export const diametrixMeetings = pgTable('diametrix_meetings', {
+  id: text('id').primaryKey(),
+  meetingNumber: integer('meeting_number').notNull(),
+  date: text('date').notNull(), // YYYY-MM-DD
+  day: text('day').notNull(), // day name in Hebrew
+  time: text('time').notNull(), // HH:mm
+  background: text('background').default(''),
+  decisions: jsonb('decisions').$type<string[]>().default([]),
+  allocations: jsonb('allocations').$type<{ strategy: string; contracts: string }[]>().default([]),
+  summary: text('summary').default(''),
+  nextMeetingNote: text('next_meeting_note').default(''),
+});
+
+// DIAMETRIX — Trading protocol error log
+export const diametrixErrors = pgTable('diametrix_errors', {
+  id: text('id').primaryKey(),
+  errorNumber: integer('error_number').notNull(),
+  date: text('date').notNull(), // YYYY-MM-DD
+  time: text('time').notNull(), // HH:mm
+  strategy: text('strategy').notNull(),
+  errorType: text('error_type').notNull(),
+  description: text('description').default(''),
+  rootCause: text('root_cause').default(''),
+  fix: text('fix').default(''),
+  status: text('status').notNull().default('open'), // 'open' | 'resolved'
+});
+
 // AI Profile — internal document the AI maintains about the user across focus sessions
 export const aiProfile = pgTable('ai_profile', {
   id: text('id').primaryKey().default('main'),

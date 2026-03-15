@@ -101,6 +101,34 @@ export interface LawLog {
   kept: boolean;
 }
 
+export interface DiametrixMeeting {
+  id: string;
+  meetingNumber: number;
+  date: string; // YYYY-MM-DD
+  day: string; // Hebrew day name
+  time: string; // HH:mm
+  background: string;
+  decisions: string[];
+  allocations: { strategy: string; contracts: string }[];
+  summary: string;
+  nextMeetingNote: string;
+}
+
+export type DiametrixErrorStatus = 'open' | 'resolved';
+
+export interface DiametrixError {
+  id: string;
+  errorNumber: number;
+  date: string; // YYYY-MM-DD
+  time: string; // HH:mm
+  strategy: string;
+  errorType: string;
+  description: string;
+  rootCause: string;
+  fix: string;
+  status: DiametrixErrorStatus;
+}
+
 export interface AiProfile {
   id: string;
   content: string;

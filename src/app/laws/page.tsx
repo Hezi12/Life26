@@ -153,19 +153,11 @@ export default function LawsPage() {
   };
 
   const trackingDays = useMemo(() => {
-    const earliest = activeLaws.reduce(
-      (min, l) => (l.startDate < min ? l.startDate : min),
-      todayString
-    );
-    const [sy, sm, sd] = earliest.split("-").map(Number);
-    const startDate = new Date(sy, sm - 1, sd);
-    const daysFromStart = Math.ceil(
-      (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    const totalDays = Math.max(daysFromStart + 31, 60);
+    // Show 3 days back + today + 4 days forward = 8 days
     const days = [];
-    for (let i = 0; i < totalDays; i++) {
-      const d = new Date(sy, sm - 1, sd + i);
+    for (let i = -3; i <= 4; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() + i);
       const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       days.push({
         date: d,
@@ -176,7 +168,7 @@ export default function LawsPage() {
       });
     }
     return days;
-  }, [todayString, activeLaws]);
+  }, [todayString]);
 
   const streak = useMemo(() => {
     if (activeLaws.length === 0) return 0;
@@ -266,7 +258,7 @@ export default function LawsPage() {
       </header>
 
       {/* Law Cards — fixed section */}
-      <section className="shrink-0 px-3 sm:px-5 py-3 space-y-2.5">
+      <section className="shrink-0 px-4 sm:px-6 py-4 space-y-3">
         {[1, 2, 3].map((position) => {
           const law = activeLaws.find((l) => l.position === position);
           const Icon = POSITION_ICONS[position - 1];
@@ -364,50 +356,50 @@ export default function LawsPage() {
                     style={{ backgroundColor: color }}
                   />
 
-                  <div className="px-3.5 py-3 sm:px-4">
+                  <div className="px-4 py-3.5 sm:px-5">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-3">
                         <div
-                          className="w-7 h-7 rounded-md flex items-center justify-center"
+                          className="w-9 h-9 rounded-lg flex items-center justify-center"
                           style={{ backgroundColor: `${color}12` }}
                         >
-                          <Icon size={14} style={{ color }} />
+                          <Icon size={18} style={{ color }} />
                         </div>
                         <div>
                           <span
-                            className="text-[9px] font-black uppercase tracking-[0.2em] block leading-none mb-0.5"
+                            className="text-[10px] font-black uppercase tracking-[0.2em] block leading-none mb-1"
                             style={{ color, textShadow: `0 0 10px ${color}40` }}
                           >
                             חוק {position}
                           </span>
-                          <h3 className="text-[13px] sm:text-sm font-bold text-white leading-tight">
+                          <h3 className="text-[15px] sm:text-base font-bold text-white leading-tight">
                             {law.name}
                           </h3>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         <button
                           onClick={() => toggleLaw(law.id, todayString, true)}
                           className={cn(
-                            "w-7 h-7 rounded-md border flex items-center justify-center transition-all",
+                            "w-9 h-9 rounded-lg border flex items-center justify-center transition-all",
                             isKept
                               ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
                               : "border-zinc-800/80 text-zinc-700 hover:border-emerald-500/30 hover:text-emerald-500/50"
                           )}
                         >
-                          <Check size={13} strokeWidth={3} />
+                          <Check size={16} strokeWidth={3} />
                         </button>
                         <button
                           onClick={() => toggleLaw(law.id, todayString, false)}
                           className={cn(
-                            "w-7 h-7 rounded-md border flex items-center justify-center transition-all",
+                            "w-9 h-9 rounded-lg border flex items-center justify-center transition-all",
                             isBroken
                               ? "bg-red-500/20 border-red-500/40 text-red-400"
                               : "border-zinc-800/80 text-zinc-700 hover:border-red-500/30 hover:text-red-500/50"
                           )}
                         >
-                          <X size={13} strokeWidth={3} />
+                          <X size={16} strokeWidth={3} />
                         </button>
                         <button
                           onClick={() =>
@@ -439,13 +431,13 @@ export default function LawsPage() {
                     </div>
 
                     {isExpanded && (
-                      <div className="mt-2.5 mr-[38px] space-y-1.5">
+                      <div className="mt-3 mr-[48px] space-y-2">
                         {law.description && (
-                          <div className="text-[10px] sm:text-[11px] text-zinc-500 leading-relaxed whitespace-pre-line">
+                          <div className="text-[11px] sm:text-xs text-zinc-500 leading-relaxed whitespace-pre-line">
                             {law.description}
                           </div>
                         )}
-                        <div className="text-[8px] text-zinc-600 font-mono tracking-wide">
+                        <div className="text-[9px] text-zinc-600 font-mono tracking-wide">
                           {law.startDate.split("-").reverse().join("/")}
                           {law.endDate && ` — ${law.endDate.split("-").reverse().join("/")}`}
                         </div>
@@ -479,46 +471,43 @@ export default function LawsPage() {
 
       {/* Tracking Section — fills remaining space */}
       <section className="flex-1 min-h-0 border-t border-zinc-900/80 bg-black/50 flex flex-col">
-        <div className="px-3 sm:px-5 pt-3 pb-1.5 flex items-center justify-between shrink-0">
+        <div className="px-4 sm:px-6 pt-3 pb-2 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <div className="w-1 h-2.5 bg-red-500/80 rounded-full" />
-            <span className="text-[8px] sm:text-[9px] text-zinc-500 uppercase font-black tracking-[0.25em]">
+            <div className="w-1 h-3 bg-red-500/80 rounded-full" />
+            <span className="text-[9px] sm:text-[10px] text-zinc-500 uppercase font-black tracking-[0.25em]">
               Daily_Tracking
             </span>
           </div>
-          <span className="text-[7px] text-zinc-700 font-mono uppercase tracking-wider">
-            {trackingDays.length}_Days
-          </span>
         </div>
 
         <div
           ref={trackingRef}
           className="flex-1 overflow-x-auto overflow-y-auto scrollbar-hide"
         >
-          <div className="min-w-max px-3 sm:px-5">
+          <div className="px-4 sm:px-6">
             {/* Date headers */}
             <div className="flex">
-              <div className="w-20 sm:w-28 shrink-0" />
+              <div className="w-24 sm:w-32 shrink-0" />
               {trackingDays.map((day) => (
                 <div
                   key={day.dateString}
                   className={cn(
-                    "w-11 sm:w-12 text-center shrink-0",
+                    "flex-1 text-center min-w-[3rem]",
                     day.isToday ? "text-red-500" : "text-zinc-700"
                   )}
                 >
-                  <div className="text-[7px] font-black uppercase">
+                  <div className="text-[9px] font-black uppercase">
                     {day.dayName}
                   </div>
-                  <div className="text-[8px] font-bold tabular-nums">
+                  <div className="text-[10px] font-bold tabular-nums">
                     {day.date.getDate()}/{day.date.getMonth() + 1}
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="flex items-center mt-1.5 mb-1.5">
-              <div className="w-20 sm:w-28 shrink-0" />
+            <div className="flex items-center mt-2 mb-2">
+              <div className="w-24 sm:w-32 shrink-0" />
               <div className="flex-1 h-px bg-zinc-900/80" />
             </div>
 
@@ -529,14 +518,14 @@ export default function LawsPage() {
               const color = POSITION_COLORS[position - 1];
 
               return (
-                <div key={position} className="flex items-center mb-1.5">
-                  <div className="w-20 sm:w-28 shrink-0 flex items-center gap-1.5 pr-1">
+                <div key={position} className="flex items-center mb-2">
+                  <div className="w-24 sm:w-32 shrink-0 flex items-center gap-2 pr-1">
                     <Icon
-                      size={10}
+                      size={14}
                       style={{ color }}
                       className="shrink-0"
                     />
-                    <span className="text-[8px] sm:text-[9px] font-bold text-zinc-600 truncate">
+                    <span className="text-[10px] sm:text-[11px] font-bold text-zinc-600 truncate">
                       חוק {position}
                     </span>
                   </div>
@@ -546,7 +535,7 @@ export default function LawsPage() {
                       return (
                         <div
                           key={day.dateString}
-                          className="w-11 sm:w-12 h-8 shrink-0 flex items-center justify-center"
+                          className="flex-1 min-w-[3rem] h-10 flex items-center justify-center"
                         >
                           <div className="w-1.5 h-1.5 rounded-full bg-zinc-900" />
                         </div>
@@ -562,9 +551,9 @@ export default function LawsPage() {
                       return (
                         <div
                           key={day.dateString}
-                          className="w-11 sm:w-12 h-8 shrink-0 flex items-center justify-center opacity-10"
+                          className="flex-1 min-w-[3rem] h-10 flex items-center justify-center opacity-10"
                         >
-                          <div className="w-1 h-1 rounded-full bg-zinc-700" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-zinc-700" />
                         </div>
                       );
                     }
@@ -572,33 +561,33 @@ export default function LawsPage() {
                     return (
                       <div
                         key={day.dateString}
-                        className="w-11 sm:w-12 h-8 shrink-0 flex items-center justify-center gap-0.5"
+                        className="flex-1 min-w-[3rem] h-10 flex items-center justify-center gap-1"
                       >
                         <button
                           onClick={() =>
                             toggleLaw(law.id, day.dateString, true)
                           }
                           className={cn(
-                            "w-4 h-6 rounded-sm flex items-center justify-center transition-all border",
+                            "w-5 h-7 rounded-sm flex items-center justify-center transition-all border",
                             isKept
                               ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
                               : "border-zinc-800/40 text-zinc-800 hover:border-emerald-500/20 hover:text-emerald-500/40"
                           )}
                         >
-                          <Check size={8} strokeWidth={3} />
+                          <Check size={10} strokeWidth={3} />
                         </button>
                         <button
                           onClick={() =>
                             toggleLaw(law.id, day.dateString, false)
                           }
                           className={cn(
-                            "w-4 h-6 rounded-sm flex items-center justify-center transition-all border",
+                            "w-5 h-7 rounded-sm flex items-center justify-center transition-all border",
                             isBroken
                               ? "bg-red-500/20 border-red-500/40 text-red-400"
                               : "border-zinc-800/40 text-zinc-800 hover:border-red-500/20 hover:text-red-500/40"
                           )}
                         >
-                          <X size={8} strokeWidth={3} />
+                          <X size={10} strokeWidth={3} />
                         </button>
                       </div>
                     );
@@ -608,9 +597,9 @@ export default function LawsPage() {
             })}
 
             {/* Summary row */}
-            <div className="flex items-center mt-0.5 pt-1.5 border-t border-zinc-900/50">
-              <div className="w-20 sm:w-28 shrink-0">
-                <span className="text-[7px] font-black text-zinc-700 uppercase tracking-widest">
+            <div className="flex items-center mt-1 pt-2 border-t border-zinc-900/50">
+              <div className="w-24 sm:w-32 shrink-0">
+                <span className="text-[8px] font-black text-zinc-700 uppercase tracking-widest">
                   Summary
                 </span>
               </div>
@@ -630,26 +619,26 @@ export default function LawsPage() {
                 return (
                   <div
                     key={day.dateString}
-                    className="w-11 sm:w-12 h-7 shrink-0 flex items-center justify-center"
+                    className="flex-1 min-w-[3rem] h-8 flex items-center justify-center"
                   >
                     {day.isFuture ? (
-                      <div className="w-1 h-1 rounded-full bg-zinc-900" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-zinc-900" />
                     ) : allKept ? (
                       <ShieldCheck
-                        size={12}
+                        size={15}
                         className="text-emerald-500 drop-shadow-[0_0_4px_#10b981]"
                       />
                     ) : hasBroken ? (
                       <ShieldX
-                        size={12}
+                        size={15}
                         className="text-red-500/50"
                       />
                     ) : dayKept > 0 ? (
-                      <span className="text-[8px] font-bold text-zinc-600 tabular-nums">
+                      <span className="text-[9px] font-bold text-zinc-600 tabular-nums">
                         {dayKept}/3
                       </span>
                     ) : (
-                      <div className="w-1 h-1 rounded-full bg-zinc-900" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-zinc-900" />
                     )}
                   </div>
                 );

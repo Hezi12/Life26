@@ -14,6 +14,8 @@ import type {
   FocusSettings,
   Law,
   LawLog,
+  DiametrixMeeting,
+  DiametrixError,
 } from './types';
 
 interface ParserText {
@@ -321,5 +323,43 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content }),
     });
+  },
+
+  // DIAMETRIX Meetings
+  async getDiametrixMeetings(): Promise<DiametrixMeeting[]> {
+    const res = await fetch('/api/diametrix/meetings');
+    if (!res.ok) throw new Error('Failed to fetch meetings');
+    return res.json();
+  },
+
+  async saveDiametrixMeeting(meeting: DiametrixMeeting): Promise<void> {
+    await fetch('/api/diametrix/meetings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(meeting),
+    });
+  },
+
+  async deleteDiametrixMeeting(id: string): Promise<void> {
+    await fetch(`/api/diametrix/meetings?id=${id}`, { method: 'DELETE' });
+  },
+
+  // DIAMETRIX Errors
+  async getDiametrixErrors(): Promise<DiametrixError[]> {
+    const res = await fetch('/api/diametrix/errors');
+    if (!res.ok) throw new Error('Failed to fetch errors');
+    return res.json();
+  },
+
+  async saveDiametrixError(error: DiametrixError): Promise<void> {
+    await fetch('/api/diametrix/errors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(error),
+    });
+  },
+
+  async deleteDiametrixError(id: string): Promise<void> {
+    await fetch(`/api/diametrix/errors?id=${id}`, { method: 'DELETE' });
   },
 };
