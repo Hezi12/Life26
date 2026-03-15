@@ -243,16 +243,6 @@ export default function SchedulePage() {
             return true;
           });
           setEvents(deduped);
-
-          // Clean up duplicates from DB if found
-          if (deduped.length < eventsData.length) {
-            const duplicateIds = eventsData
-              .filter((e: Event) => !deduped.includes(e))
-              .map((e: Event) => e.id);
-            for (const id of duplicateIds) {
-              api.deleteEvent(id).catch(() => {});
-            }
-          }
         }
         
         if (categoriesData && Array.isArray(categoriesData) && categoriesData.length > 0) {
@@ -862,15 +852,13 @@ export default function SchedulePage() {
               return true;
             });
 
+            // Update local state immediately for responsiveness
             setEvents(prev => [...prev.filter(e => e.dateString !== dateString), ...dedupedEvents]);
             setDailyParserTexts(prev => ({...prev, [dateString]: inputText}));
 
-            // Delete old events for this date, then save new ones
+            // Atomic replace: delete old + insert new in a single DB transaction
             try {
-              await api.deleteEventsByDate(dateString);
-              for (const event of dedupedEvents) {
-                await api.saveEvent(event);
-              }
+              await api.replaceEventsByDate(dateString, dedupedEvents);
             } catch (error) {
               console.error('Failed to save parser events', error);
             }
@@ -886,7 +874,7 @@ export default function SchedulePage() {
               console.error('Failed to save parser text', error);
             }
 
-            // Notify other pages
+            // Notify other pages AFTER all DB writes are done
             window.dispatchEvent(new CustomEvent('life26-update', {
               detail: { type: 'events-updated', source: 'schedule-page' }
             }));

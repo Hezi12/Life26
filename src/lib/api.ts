@@ -63,6 +63,19 @@ export const api = {
     }
   },
 
+  // Atomic replace: delete all events for a date and insert new ones in a single transaction
+  async replaceEventsByDate(dateString: string, newEvents: Event[]): Promise<void> {
+    const res = await fetch('/api/events/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dateString, events: newEvents }),
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Failed to batch replace events' }));
+      throw new Error(error.error || 'Failed to batch replace events');
+    }
+  },
+
   // Categories
   async getCategories(): Promise<Category[]> {
     const res = await fetch('/api/categories');
