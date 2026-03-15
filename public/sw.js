@@ -1,5 +1,5 @@
 // Service Worker for Life26 PWA
-const CACHE_NAME = 'life26-v2';
+const CACHE_NAME = 'life26-v3';
 const urlsToCache = [
   '/',
   '/schedule',
@@ -8,6 +8,7 @@ const urlsToCache = [
   '/focus',
   '/laws',
   '/analytics',
+  '/diametrix',
 ];
 
 self.addEventListener('install', (event) => {
@@ -19,10 +20,21 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Network-first: try network, fallback to cache (for offline support)
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then((response) => {
-        return response || fetch(event.request);
+        // Cache the fresh response
+        if (response.ok && event.request.method === 'GET') {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request);
       })
   );
 });
