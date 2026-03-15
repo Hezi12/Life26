@@ -282,18 +282,20 @@ export default function SchedulePage() {
     loadData();
   }, []);
 
-  // Synchronize events when they change elsewhere
+  // Synchronize events when they change from other pages (not this one)
   useEffect(() => {
-    const handleSync = async () => {
+    const handleSync = async (ev: globalThis.Event) => {
+      const detail = (ev as CustomEvent).detail;
+      if (detail?.source === 'schedule-page') return; // Skip our own events
       try {
         const eventsData = await api.getEvents();
         if (eventsData && Array.isArray(eventsData)) {
           setEvents(eventsData);
         }
-        const dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
-        const parserTextData = await api.getParserTexts(dateString);
+        const ds = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+        const parserTextData = await api.getParserTexts(ds);
         if (parserTextData) {
-          setDailyParserTexts(prev => ({ ...prev, [dateString]: parserTextData.content || '' }));
+          setDailyParserTexts(prev => ({ ...prev, [ds]: parserTextData.content || '' }));
         }
       } catch (error) {
         console.error('Sync failed', error);
@@ -301,7 +303,7 @@ export default function SchedulePage() {
     };
 
     window.addEventListener('life26-update', handleSync as EventListener);
-    
+
     return () => {
       window.removeEventListener('life26-update', handleSync as EventListener);
     };
@@ -368,27 +370,7 @@ export default function SchedulePage() {
     }
   };
 
-  useEffect(() => {
-    if (!isLoaded || typeof window === 'undefined') return;
-    
-    // Save events to API
-    const saveEvents = async () => {
-      try {
-        for (const event of events) {
-          await api.saveEvent(event);
-        }
-        // Notify other pages
-        window.dispatchEvent(new CustomEvent('life26-update', { 
-          detail: { type: 'events-updated', source: 'schedule-page' } 
-        }));
-      } catch (error) {
-        console.error('Failed to save events to API', error);
-        // No fallback - API is required
-      }
-    };
-    
-    saveEvents();
-  }, [events, isLoaded]);
+  // Events are saved explicitly via Parser onSave — no global auto-save
 
   useEffect(() => {
     if (!isLoaded || typeof window === 'undefined') return;
@@ -868,6 +850,11 @@ export default function SchedulePage() {
             } catch (error) {
               console.error('Failed to save parser text', error);
             }
+
+            // Notify other pages
+            window.dispatchEvent(new CustomEvent('life26-update', {
+              detail: { type: 'events-updated', source: 'schedule-page' }
+            }));
 
             setIsParserOpen(false);
           }}
