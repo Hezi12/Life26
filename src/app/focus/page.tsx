@@ -303,7 +303,7 @@ export default function FocusPage() {
   const lockDefaultPreset = PRESET_TIMES.find((t) => timeToMinutes(t) > nowMin) || PRESET_TIMES[0];
 
   return (
-    <div className="h-screen overflow-hidden bg-black px-4 py-6 md:px-8 md:py-10 pt-safe" dir="rtl">
+    <div className="h-screen overflow-hidden bg-black px-4 py-6 md:px-8 md:py-10 pt-safe flex flex-col" dir="rtl">
       {/* Top bar */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -458,14 +458,16 @@ export default function FocusPage() {
       </div>
 
       {/* Notes */}
-      <textarea
-        ref={notesRef}
-        value={editNotes}
-        onChange={(e) => setEditNotes(e.target.value)}
-        placeholder="..."
-        className="w-full bg-transparent text-white text-sm font-mono leading-relaxed resize-none outline-none min-h-[50vh] placeholder:text-zinc-800"
-        dir="rtl"
-      />
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
+        <textarea
+          ref={notesRef}
+          value={editNotes}
+          onChange={(e) => setEditNotes(e.target.value)}
+          placeholder="..."
+          className="w-full h-full bg-transparent text-white text-sm font-mono leading-relaxed resize-none outline-none placeholder:text-zinc-800"
+          dir="rtl"
+        />
+      </div>
 
     </div>
   );
